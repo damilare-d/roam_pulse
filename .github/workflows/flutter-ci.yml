@@ -1,0 +1,49 @@
+name: flutter-ci
+
+on:
+  pull_request:
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "pubspec.yaml"
+      - "melos.yaml"
+      - ".github/workflows/flutter-ci.yml"
+  push:
+    branches: [main]
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Resolve workspace dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+
+      - name: Static analysis
+        run: dart analyze --fatal-infos
+
+      - name: Run tests (pure Dart packages)
+        run: |
+          dart test packages/core packages/network packages/diagnostics packages/ai_agent packages/analytics
+
+      - name: Run tests (Flutter packages)
+        run: |
+          for pkg in design_system storage connectivity plans; do
+            (cd packages/$pkg && flutter test)
+          done
+
+      - name: Run tests (mobile app)
+        run: (cd apps/mobile && flutter test --coverage)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile-coverage
+          path: apps/mobile/coverage/lcov.info
