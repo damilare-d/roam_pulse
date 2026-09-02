@@ -1,0 +1,20 @@
+name: roampulse
+publish_to: 'none'
+
+environment:
+  sdk: ^3.9.0
+
+dev_dependencies:
+  melos: ^6.3.2
+
+workspace:
+  - apps/mobile
+  - packages/core
+  - packages/design_system
+  - packages/network
+  - packages/storage
+  - packages/connectivity
+  - packages/plans
+  - packages/diagnostics
+  - packages/ai_agent
+  - packages/analytics

@@ -1,0 +1,13 @@
+name: ai_agent
+description: "Claude connectivity recovery agent contracts, tool definitions, and response validation."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.9.0
+
+resolution: workspace
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^5.0.0
