@@ -1,0 +1,80 @@
+import 'package:core/core.dart';
+import 'package:dio/dio.dart';
+
+import 'api_config.dart';
+import 'dio_error_mapper.dart';
+
+/// Thin wrapper around Dio that unwraps RoamPulse's response envelope
+/// (`{data, meta}` / `{error: {code, message, details}}`, see
+/// docs/ARCHITECTURE.md section 7) into a [Result], so repositories never
+/// touch Dio or raw JSON directly.
+class ApiClient {
+  ApiClient({required ApiConfig config, Dio? dio})
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              baseUrl: config.baseUrl,
+              connectTimeout: config.connectTimeout,
+              receiveTimeout: config.receiveTimeout,
+            ),
+          ) {
+    if (config.enableLogging) {
+      _dio.interceptors.add(
+        LogInterceptor(requestBody: true, responseBody: true),
+      );
+    }
+  }
+
+  final Dio _dio;
+
+  /// GETs [path] and decodes the `data` object of the envelope with
+  /// [fromJson]. Use for endpoints that return a single JSON object
+  /// (profile, trips/current, plans/current, ...).
+  Future<Result<T>> getJson<T>(
+    String path, {
+    required T Function(Map<String, dynamic> json) fromJson,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        path,
+        queryParameters: queryParameters,
+      );
+      final data = response.data?['data'];
+      if (data is! Map<String, dynamic>) {
+        return const Err(ParsingFailure());
+      }
+      return Ok(fromJson(data));
+    } on DioException catch (e) {
+      return Err(mapDioException(e));
+    } on TypeError {
+      return const Err(ParsingFailure());
+    }
+  }
+
+  /// GETs [path] and decodes the `data` array of the envelope with
+  /// [fromJson] applied element-wise. Use for list endpoints
+  /// (connectivity/events, ...).
+  Future<Result<List<T>>> getJsonList<T>(
+    String path, {
+    required T Function(Map<String, dynamic> json) fromJson,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        path,
+        queryParameters: queryParameters,
+      );
+      final data = response.data?['data'];
+      if (data is! List) {
+        return const Err(ParsingFailure());
+      }
+      return Ok(data.map((e) => fromJson(e as Map<String, dynamic>)).toList());
+    } on DioException catch (e) {
+      return Err(mapDioException(e));
+    } on TypeError {
+      return const Err(ParsingFailure());
+    }
+  }
+}

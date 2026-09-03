@@ -1,5 +1,6 @@
 /// Dio-based HTTP client, interceptors, and structured error classification.
-///
-/// Scaffolded in Phase 1 (monorepo foundation). Implementation lands
-/// alongside the features that first need it — see docs/PRODUCT_DISCOVERY.md.
 library;
+
+export 'src/api_client.dart';
+export 'src/api_config.dart';
+export 'src/dio_error_mapper.dart';
