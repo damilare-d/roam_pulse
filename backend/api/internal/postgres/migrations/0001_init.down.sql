@@ -1,0 +1,12 @@
+DROP TABLE IF EXISTS sync_metadata;
+DROP TABLE IF EXISTS diagnostic_results;
+DROP TABLE IF EXISTS diagnostic_sessions;
+DROP TABLE IF EXISTS connectivity_events;
+DROP TABLE IF EXISTS usage_records;
+DROP TABLE IF EXISTS network_sessions;
+DROP TABLE IF EXISTS travel_plans;
+DROP TABLE IF EXISTS esims;
+DROP TABLE IF EXISTS networks;
+DROP TABLE IF EXISTS destinations;
+DROP TABLE IF EXISTS traveller_profiles;
+DROP TABLE IF EXISTS users;
