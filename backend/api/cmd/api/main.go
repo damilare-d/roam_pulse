@@ -2,24 +2,60 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
-	"os"
+	"time"
 
+	"roampulse/backend/internal/config"
 	"roampulse/backend/internal/httpapi"
+	"roampulse/backend/internal/postgres"
+	"roampulse/backend/internal/service"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("config: %v", err)
 	}
 
-	mux := http.NewServeMux()
-	httpapi.RegisterHealthRoutes(mux)
+	if err := postgres.Migrate(cfg.DatabaseURL); err != nil {
+		log.Fatalf("migrate: %v", err)
+	}
 
-	log.Printf("roampulse backend listening on :%s", port)
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	pool, err := postgres.Connect(ctx, cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("connect: %v", err)
+	}
+	defer pool.Close()
+
+	travellers := postgres.NewTravellerRepo(pool)
+	plans := postgres.NewPlanRepo(pool)
+	destinations := postgres.NewDestinationRepo(pool)
+	networks := postgres.NewNetworkRepo(pool)
+	connectivity := postgres.NewConnectivityRepo(pool)
+
+	router := httpapi.NewRouter(httpapi.Services{
+		Profile:      service.NewProfileService(travellers),
+		Trip:         service.NewTripService(travellers, plans, destinations, networks, connectivity),
+		Plan:         service.NewPlanService(travellers, plans),
+		Usage:        service.NewUsageService(travellers, plans),
+		Connectivity: service.NewConnectivityService(travellers, plans, networks, connectivity),
+		Destination:  service.NewDestinationService(destinations),
+		Network:      service.NewNetworkService(networks),
+	})
+
+	server := &http.Server{
+		Addr:              ":" + cfg.Port,
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	log.Printf("roampulse backend listening on :%s", cfg.Port)
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 }
