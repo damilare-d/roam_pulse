@@ -3,9 +3,7 @@ import 'package:storage/storage.dart';
 
 import 'connectivity_event.dart';
 import 'connectivity_repository.dart';
-import 'connectivity_state.dart';
 import 'connectivity_status.dart';
-import 'network_info.dart';
 
 /// Offline-first: network-first with a cache fallback, not full
 /// stale-while-revalidate — see ADR-006 for why that's a deliberate scope
@@ -23,8 +21,8 @@ class CachingConnectivityRepository implements ConnectivityRepository {
          store: store,
          key: 'connectivity.status',
          ttl: ttl,
-         fromJson: _statusFromJson,
-         toJson: _statusToJson,
+         fromJson: ConnectivityStatus.fromJson,
+         toJson: (status) => status.toJson(),
        ),
        _eventsCache = Cache<List<ConnectivityEvent>>(
          store: store,
@@ -67,50 +65,17 @@ class CachingConnectivityRepository implements ConnectivityRepository {
   }
 }
 
-Map<String, dynamic> _statusToJson(ConnectivityStatus status) => {
-  'state': status.state.name,
-  'network': {
-    'carrierName': status.network.carrierName,
-    'technology': status.network.technology,
-  },
-  'signalStrength': status.signalStrength,
-  'latencyMs': status.latencyMs,
-  'lastEventAt': status.lastEventAt.toIso8601String(),
-};
-
-ConnectivityStatus _statusFromJson(Map<String, dynamic> json) =>
-    ConnectivityStatus(
-      state: ConnectivityState.values.byName(json['state'] as String),
-      network: NetworkInfo.fromJson(json['network'] as Map<String, dynamic>),
-      signalStrength: json['signalStrength'] as String,
-      latencyMs: json['latencyMs'] as int?,
-      lastEventAt: DateTime.parse(json['lastEventAt'] as String),
-    );
-
+// Cache<T> needs a single JSON object per slot, so the events list is
+// wrapped/unwrapped under an "events" key using ConnectivityEvent's own
+// toJson/fromJson for each element.
 Map<String, dynamic> _eventsToJson(List<ConnectivityEvent> events) => {
-  'events': events
-      .map(
-        (e) => {
-          'occurredAt': e.occurredAt.toIso8601String(),
-          'fromState': e.fromState.name,
-          'toState': e.toState.name,
-          'reason': e.reason,
-        },
-      )
-      .toList(),
+  'events': events.map((e) => e.toJson()).toList(),
 };
 
 List<ConnectivityEvent> _eventsFromJson(Map<String, dynamic> json) {
   final raw = json['events'] as List;
   return raw
       .cast<Map<String, dynamic>>()
-      .map(
-        (e) => ConnectivityEvent(
-          occurredAt: DateTime.parse(e['occurredAt'] as String),
-          fromState: ConnectivityState.values.byName(e['fromState'] as String),
-          toState: ConnectivityState.values.byName(e['toState'] as String),
-          reason: e['reason'] as String?,
-        ),
-      )
+      .map(ConnectivityEvent.fromJson)
       .toList();
 }

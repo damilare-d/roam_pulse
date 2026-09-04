@@ -27,4 +27,11 @@ class ConnectivityEvent {
       reason: json['reason'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'occurredAt': occurredAt.toIso8601String(),
+    'fromState': fromState.name,
+    'toState': toState.name,
+    'reason': reason,
+  };
 }
