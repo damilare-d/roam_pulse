@@ -2,17 +2,29 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:network/network.dart';
+import 'package:storage/storage.dart';
 
 import 'app.dart';
+import 'features/auth/auth_repository.dart';
 import 'features/dashboard/profile_repository.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   final apiClient = ApiClient(
     config: ApiConfig(baseUrl: _resolveBaseUrl(), enableLogging: true),
   );
-  final profileRepository = HttpProfileRepository(apiClient);
+  final store = await SharedPreferencesStore.create();
 
-  runApp(RoamPulseApp(profileRepository: profileRepository));
+  final profileRepository = HttpProfileRepository(apiClient);
+  final authRepository = HttpAuthRepository(apiClient, store);
+
+  runApp(
+    RoamPulseApp(
+      profileRepository: profileRepository,
+      authRepository: authRepository,
+    ),
+  );
 }
 
 /// The Android emulator can't reach the host machine via `localhost` — it
