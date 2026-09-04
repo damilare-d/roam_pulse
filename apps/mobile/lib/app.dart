@@ -4,8 +4,10 @@ import 'package:diagnostics/diagnostics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:plans/plans.dart';
+import 'package:provider/provider.dart';
 
 import 'features/auth/auth_repository.dart';
+import 'features/chaos/chaos_mode_controller.dart';
 import 'router/app_router.dart';
 import 'router/auth_guard.dart';
 
@@ -17,6 +19,8 @@ class RoamPulseApp extends StatelessWidget {
     required this.authRepository,
     required this.connectivityRepository,
     required this.diagnosticsRepository,
+    this.chaosModeController,
+    this.chaosCacheRepository,
     super.key,
   }) : _router = AppRouter(AuthGuard(authRepository));
 
@@ -26,6 +30,13 @@ class RoamPulseApp extends StatelessWidget {
   final AuthRepository authRepository;
   final ConnectivityRepository connectivityRepository;
   final DiagnosticsRepository diagnosticsRepository;
+
+  /// Non-null only in debug builds (see main.dart) — Chaos Mode's route and
+  /// entry-point button read these two directly, so when they're absent
+  /// there is genuinely nothing chaos-related left in the widget tree,
+  /// not just a hidden button.
+  final ChaosModeController? chaosModeController;
+  final CachingConnectivityRepository? chaosCacheRepository;
   final AppRouter _router;
 
   @override
@@ -42,6 +53,14 @@ class RoamPulseApp extends StatelessWidget {
         RepositoryProvider<DiagnosticsRepository>.value(
           value: diagnosticsRepository,
         ),
+        if (chaosModeController != null)
+          ChangeNotifierProvider<ChaosModeController>.value(
+            value: chaosModeController!,
+          ),
+        if (chaosCacheRepository != null)
+          RepositoryProvider<CachingConnectivityRepository>.value(
+            value: chaosCacheRepository!,
+          ),
       ],
       child: MaterialApp.router(
         title: 'RoamPulse',

@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart' show Key;
 
 import '../features/auth/demo_entry_page.dart';
 import '../features/auth/splash_page.dart';
+import '../features/chaos/chaos_mode_page.dart';
 import '../features/dashboard/connection_details_page.dart';
 import '../features/dashboard/dashboard_page.dart';
 import '../features/diagnostics/diagnostics_page.dart';
@@ -24,5 +25,6 @@ class AppRouter extends RootStackRouter {
     AutoRoute(page: DashboardRoute.page, guards: [_authGuard]),
     AutoRoute(page: ConnectionDetailsRoute.page, guards: [_authGuard]),
     AutoRoute(page: DiagnosticsRoute.page, guards: [_authGuard]),
+    AutoRoute(page: ChaosModeRoute.page, guards: [_authGuard]),
   ];
 }

@@ -11,6 +11,22 @@
 part of 'app_router.dart';
 
 /// generated route for
+/// [ChaosModePage]
+class ChaosModeRoute extends PageRouteInfo<void> {
+  const ChaosModeRoute({List<PageRouteInfo>? children})
+    : super(ChaosModeRoute.name, initialChildren: children);
+
+  static const String name = 'ChaosModeRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const ChaosModePage();
+    },
+  );
+}
+
+/// generated route for
 /// [ConnectionDetailsPage]
 class ConnectionDetailsRoute extends PageRouteInfo<ConnectionDetailsRouteArgs> {
   ConnectionDetailsRoute({

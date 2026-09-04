@@ -1,9 +1,11 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:design_system/design_system.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:plans/plans.dart';
 
+import '../../router/app_router.dart';
 import 'connectivity_card.dart';
 import 'dashboard_bloc.dart';
 import 'format_utils.dart';
@@ -36,7 +38,17 @@ class _DashboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('RoamPulse')),
+      appBar: AppBar(
+        title: const Text('RoamPulse'),
+        actions: [
+          if (kDebugMode)
+            IconButton(
+              icon: const Icon(Icons.bug_report_outlined),
+              tooltip: 'Chaos Mode',
+              onPressed: () => context.router.push(const ChaosModeRoute()),
+            ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
