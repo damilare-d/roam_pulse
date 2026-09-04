@@ -15,12 +15,16 @@ func TestGetStatus_UsesLatestEventForState(t *testing.T) {
 	networks := &fakeNetworkRepo{network: &domain.Network{ID: "network-1", CarrierName: "SoftBank"}}
 
 	latency := 42
+	download := 87.0
+	upload := 21.0
 	eventTime := time.Now()
 	connectivity := &fakeConnectivityRepo{
 		session: &domain.NetworkSession{
 			NetworkID:      "network-1",
 			SignalStrength: "strong",
 			LatencyMs:      &latency,
+			DownloadMbps:   &download,
+			UploadMbps:     &upload,
 			ConnectedAt:    eventTime.Add(-time.Hour),
 		},
 		events: []domain.ConnectivityEvent{
@@ -42,6 +46,12 @@ func TestGetStatus_UsesLatestEventForState(t *testing.T) {
 	}
 	if !status.LastEventAt.Equal(eventTime) {
 		t.Errorf("LastEventAt = %v, want %v", status.LastEventAt, eventTime)
+	}
+	if status.DownloadMbps == nil || *status.DownloadMbps != 87.0 {
+		t.Errorf("DownloadMbps = %v, want 87.0", status.DownloadMbps)
+	}
+	if status.UploadMbps == nil || *status.UploadMbps != 21.0 {
+		t.Errorf("UploadMbps = %v, want 21.0", status.UploadMbps)
 	}
 }
 

@@ -71,6 +71,8 @@ type NetworkSession struct {
 	DisconnectedAt *time.Time `json:"disconnectedAt,omitempty"`
 	SignalStrength string     `json:"signalStrength"`
 	LatencyMs      *int       `json:"latencyMs,omitempty"`
+	DownloadMbps   *float64   `json:"downloadMbps,omitempty"`
+	UploadMbps     *float64   `json:"uploadMbps,omitempty"`
 }
 
 type UsageRecord struct {

@@ -151,17 +151,26 @@ func Seed(ctx context.Context, pool *pgxpool.Pool) error {
 		disconnectedAt    *time.Time
 		signalStrength    string
 		latencyMs         *int
+		downloadMbps      *float64
+		uploadMbps        *float64
 	}{
-		{planJapanID, networkSoftBankID, now.Add(-48 * time.Hour), nil, "strong", ptr(42)},
-		{planFranceID, networkOrangeID, now.Add(-60 * 24 * time.Hour), ptr(now.Add(-59 * 24 * time.Hour)), "weak", ptr(320)},
-		{planSpainID, networkMovistarID, now.Add(-120 * 24 * time.Hour), ptr(now.Add(-119 * 24 * time.Hour)), "none", nil},
-		{planItalyID, networkTimID, now.Add(-200 * 24 * time.Hour), ptr(now.Add(-199 * 24 * time.Hour)), "moderate", ptr(110)},
+		{planJapanID, networkSoftBankID, now.Add(-48 * time.Hour), nil, "strong", ptr(42), ptr(87.0), ptr(21.0)},
+		{
+			planFranceID, networkOrangeID, now.Add(-60 * 24 * time.Hour), ptr(now.Add(-59 * 24 * time.Hour)),
+			"weak", ptr(320), ptr(3.2), ptr(0.8),
+		},
+		{planSpainID, networkMovistarID, now.Add(-120 * 24 * time.Hour), ptr(now.Add(-119 * 24 * time.Hour)), "none", nil, nil, nil},
+		{
+			planItalyID, networkTimID, now.Add(-200 * 24 * time.Hour), ptr(now.Add(-199 * 24 * time.Hour)),
+			"moderate", ptr(110), ptr(24.5), ptr(9.1),
+		},
 	}
 	for _, s := range sessions {
 		if _, err := tx.Exec(ctx,
-			`INSERT INTO network_sessions (plan_id, network_id, connected_at, disconnected_at, signal_strength, latency_ms)
-			 VALUES ($1, $2, $3, $4, $5, $6)`,
-			s.planID, s.networkID, s.connectedAt, s.disconnectedAt, s.signalStrength, s.latencyMs,
+			`INSERT INTO network_sessions
+			 (plan_id, network_id, connected_at, disconnected_at, signal_strength, latency_ms, download_mbps, upload_mbps)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+			s.planID, s.networkID, s.connectedAt, s.disconnectedAt, s.signalStrength, s.latencyMs, s.downloadMbps, s.uploadMbps,
 		); err != nil {
 			return fmt.Errorf("seed: insert network session for plan %s: %w", s.planID, err)
 		}

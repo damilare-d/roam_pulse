@@ -74,6 +74,8 @@ func (s *ConnectivityService) GetStatus(ctx context.Context) (*ConnectivityStatu
 		Network:        *network,
 		SignalStrength: session.SignalStrength,
 		LatencyMs:      session.LatencyMs,
+		DownloadMbps:   session.DownloadMbps,
+		UploadMbps:     session.UploadMbps,
 		LastEventAt:    lastEventAt,
 	}, nil
 }

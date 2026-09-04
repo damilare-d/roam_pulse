@@ -23,7 +23,7 @@ func NewConnectivityRepo(pool *pgxpool.Pool) *ConnectivityRepo {
 func (r *ConnectivityRepo) GetLatestSession(ctx context.Context, planID string) (*domain.NetworkSession, error) {
 	const query = `
 		SELECT id, plan_id, network_id, connected_at, disconnected_at,
-		       COALESCE(signal_strength, ''), latency_ms
+		       COALESCE(signal_strength, ''), latency_ms, download_mbps, upload_mbps
 		FROM network_sessions
 		WHERE plan_id = $1
 		ORDER BY connected_at DESC
@@ -33,7 +33,7 @@ func (r *ConnectivityRepo) GetLatestSession(ctx context.Context, planID string) 
 	var s domain.NetworkSession
 	err := r.pool.QueryRow(ctx, query, planID).Scan(
 		&s.ID, &s.PlanID, &s.NetworkID, &s.ConnectedAt, &s.DisconnectedAt,
-		&s.SignalStrength, &s.LatencyMs,
+		&s.SignalStrength, &s.LatencyMs, &s.DownloadMbps, &s.UploadMbps,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, apperror.NotFound("no network session recorded for this trip")

@@ -36,5 +36,7 @@ type ConnectivityStatus struct {
 	Network        domain.Network           `json:"network"`
 	SignalStrength string                   `json:"signalStrength"`
 	LatencyMs      *int                     `json:"latencyMs,omitempty"`
+	DownloadMbps   *float64                 `json:"downloadMbps,omitempty"`
+	UploadMbps     *float64                 `json:"uploadMbps,omitempty"`
 	LastEventAt    time.Time                `json:"lastEventAt"`
 }
