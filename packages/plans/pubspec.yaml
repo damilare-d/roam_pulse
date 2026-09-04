@@ -11,6 +11,12 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
+  core:
+    path: ../core
+  network:
+    path: ../network
+  connectivity:
+    path: ../connectivity
 
 dev_dependencies:
   flutter_test:
