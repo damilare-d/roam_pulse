@@ -19,7 +19,10 @@ Future<void> main() async {
 
   final profileRepository = HttpProfileRepository(apiClient);
   final authRepository = HttpAuthRepository(apiClient, store);
-  final connectivityRepository = HttpConnectivityRepository(apiClient);
+  final connectivityRepository = CachingConnectivityRepository(
+    HttpConnectivityRepository(apiClient),
+    store,
+  );
 
   runApp(
     RoamPulseApp(

@@ -9,17 +9,25 @@ import 'package:roam_pulse/features/dashboard/connectivity_card.dart';
 class _FakeConnectivityRepository implements ConnectivityRepository {
   _FakeConnectivityRepository({this.statusResult, this.eventsResult});
 
-  final Result<ConnectivityStatus>? statusResult;
-  final Result<List<ConnectivityEvent>>? eventsResult;
+  final Result<Cached<ConnectivityStatus>>? statusResult;
+  final Result<Cached<List<ConnectivityEvent>>>? eventsResult;
 
   @override
-  Future<Result<ConnectivityStatus>> getStatus() async =>
+  Future<Result<Cached<ConnectivityStatus>>> getStatus() async =>
       statusResult ?? const Err(NetworkUnavailableFailure());
 
   @override
-  Future<Result<List<ConnectivityEvent>>> getRecentEvents({
+  Future<Result<Cached<List<ConnectivityEvent>>>> getRecentEvents({
     int limit = 20,
-  }) async => eventsResult ?? const Ok([]);
+  }) async =>
+      eventsResult ??
+      Ok(
+        Cached(
+          value: const <ConnectivityEvent>[],
+          syncedAt: DateTime.now(),
+          isStale: false,
+        ),
+      );
 }
 
 Widget _wrap(ConnectivityRepository repository) {
@@ -47,13 +55,20 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _wrap(_FakeConnectivityRepository(statusResult: Ok(status))),
+      _wrap(
+        _FakeConnectivityRepository(
+          statusResult: Ok(
+            Cached(value: status, syncedAt: DateTime.now(), isStale: false),
+          ),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('Connected'), findsOneWidget);
     expect(find.textContaining('SoftBank'), findsOneWidget);
     expect(find.textContaining('42 ms'), findsOneWidget);
+    expect(find.textContaining('no connection'), findsNothing);
   });
 
   testWidgets('shows recent activity with the event reason', (tester) async {
@@ -76,8 +91,12 @@ void main() {
     await tester.pumpWidget(
       _wrap(
         _FakeConnectivityRepository(
-          statusResult: Ok(status),
-          eventsResult: Ok(events),
+          statusResult: Ok(
+            Cached(value: status, syncedAt: DateTime.now(), isStale: false),
+          ),
+          eventsResult: Ok(
+            Cached(value: events, syncedAt: DateTime.now(), isStale: false),
+          ),
         ),
       ),
     );
@@ -87,12 +106,41 @@ void main() {
     expect(find.text('high latency and packet loss'), findsOneWidget);
   });
 
-  testWidgets('shows an error view with retry when the status fetch fails', (
-    tester,
-  ) async {
-    await tester.pumpWidget(_wrap(_FakeConnectivityRepository()));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'shows a stale-data banner instead of pretending cached data is fresh',
+    (tester) async {
+      final status = ConnectivityStatus(
+        state: ConnectivityState.connected,
+        network: const NetworkInfo(carrierName: 'SoftBank', technology: '5G'),
+        signalStrength: 'strong',
+        latencyMs: 42,
+        lastEventAt: DateTime.utc(2026, 9, 1),
+      );
+      final staleSince = DateTime.now().subtract(const Duration(minutes: 12));
 
-    expect(find.text('Try again'), findsOneWidget);
-  });
+      await tester.pumpWidget(
+        _wrap(
+          _FakeConnectivityRepository(
+            statusResult: Ok(
+              Cached(value: status, syncedAt: staleSince, isStale: true),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('no connection'), findsOneWidget);
+      expect(find.textContaining('12 minutes ago'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'shows an error view with retry when the status fetch fails with no cache',
+    (tester) async {
+      await tester.pumpWidget(_wrap(_FakeConnectivityRepository()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Try again'), findsOneWidget);
+    },
+  );
 }

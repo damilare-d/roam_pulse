@@ -17,15 +17,36 @@ class _FakeProfileRepository implements ProfileRepository {
   Future<Result<TravellerProfile>> getProfile() async => _result;
 }
 
+/// Kept green (connected, no errors) by default so these dashboard-page
+/// tests stay focused on the profile card's own states — the
+/// connectivity card's own loading/error/stale behaviour is covered by
+/// connectivity_card_test.dart.
 class _FakeConnectivityRepository implements ConnectivityRepository {
   @override
-  Future<Result<ConnectivityStatus>> getStatus() async =>
-      const Err(NetworkUnavailableFailure());
+  Future<Result<Cached<ConnectivityStatus>>> getStatus() async => Ok(
+    Cached(
+      value: ConnectivityStatus(
+        state: ConnectivityState.connected,
+        network: const NetworkInfo(carrierName: 'SoftBank', technology: '5G'),
+        signalStrength: 'strong',
+        latencyMs: 42,
+        lastEventAt: DateTime.utc(2026, 9, 1),
+      ),
+      syncedAt: DateTime.now(),
+      isStale: false,
+    ),
+  );
 
   @override
-  Future<Result<List<ConnectivityEvent>>> getRecentEvents({
+  Future<Result<Cached<List<ConnectivityEvent>>>> getRecentEvents({
     int limit = 20,
-  }) async => const Ok([]);
+  }) async => Ok(
+    Cached(
+      value: const <ConnectivityEvent>[],
+      syncedAt: DateTime.now(),
+      isStale: false,
+    ),
+  );
 }
 
 Widget _wrap(ProfileRepository repository) {
@@ -55,7 +76,7 @@ void main() {
       ),
     );
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsWidgets);
   });
 
   testWidgets('shows the traveller profile once loaded', (tester) async {
@@ -70,7 +91,7 @@ void main() {
     expect(find.textContaining('United Kingdom'), findsOneWidget);
   });
 
-  testWidgets('shows an error view with retry when the fetch fails', (
+  testWidgets('shows an error view with retry when the profile fetch fails', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -78,6 +99,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // The profile card shows its own retry; the connectivity card (kept
+    // healthy by the fake above) does not, so exactly one appears.
     expect(find.text('Try again'), findsOneWidget);
   });
 }

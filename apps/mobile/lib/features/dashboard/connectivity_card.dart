@@ -9,6 +9,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// state machine stays UI-agnostic, the tone palette stays
 /// domain-agnostic, and this is the one place that knows both (see
 /// ADR-001).
+///
+/// The stale/offline banner below is the concrete answer to
+/// docs/PRODUCT_DISCOVERY.md's "never make cached data look identical to
+/// fresh data" — see ADR-006 for the caching strategy behind it.
 class ConnectivityCard extends StatelessWidget {
   const ConnectivityCard({super.key});
 
@@ -43,15 +47,42 @@ class _ConnectivityView extends StatelessWidget {
               ),
             ),
           ),
-          ConnectivityBlocLoaded(:final status, :final recentEvents) =>
+          ConnectivityBlocLoaded(
+            :final status,
+            :final recentEvents,
+            :final syncedAt,
+            :final isStale,
+          ) =>
             RoamPulseCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  StatusIndicator(
-                    label: _stateLabel(status.state),
-                    tone: _stateTone(status.state),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StatusIndicator(
+                          label: _stateLabel(status.state),
+                          tone: _stateTone(status.state),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.refresh, size: 20),
+                        tooltip: 'Refresh',
+                        onPressed: () => context.read<ConnectivityBloc>().add(
+                          const ConnectivityStatusRequested(),
+                        ),
+                      ),
+                    ],
                   ),
+                  if (isStale) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Showing saved data from ${_relativeTime(syncedAt)} — no connection',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.warning,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     '${status.network.carrierName} · ${status.network.technology}',
@@ -140,4 +171,23 @@ String _eventLine(ConnectivityEvent event) {
     return reason;
   }
   return '${_stateLabel(event.fromState)} → ${_stateLabel(event.toState)}';
+}
+
+/// A small local formatter rather than pulling in `intl`/`timeago` for one
+/// label — RoamPulse doesn't need locale-aware relative time yet.
+String _relativeTime(DateTime syncedAt) {
+  final elapsed = DateTime.now().difference(syncedAt);
+  if (elapsed < const Duration(minutes: 1)) {
+    return 'moments ago';
+  }
+  if (elapsed < const Duration(hours: 1)) {
+    final minutes = elapsed.inMinutes;
+    return '$minutes ${minutes == 1 ? 'minute' : 'minutes'} ago';
+  }
+  if (elapsed < const Duration(days: 1)) {
+    final hours = elapsed.inHours;
+    return '$hours ${hours == 1 ? 'hour' : 'hours'} ago';
+  }
+  final days = elapsed.inDays;
+  return '$days ${days == 1 ? 'day' : 'days'} ago';
 }
