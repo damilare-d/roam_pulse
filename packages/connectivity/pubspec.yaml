@@ -16,6 +16,8 @@ dependencies:
     path: ../core
   network:
     path: ../network
+  storage:
+    path: ../storage
 
 dev_dependencies:
   flutter_test:

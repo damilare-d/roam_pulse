@@ -2,6 +2,7 @@
 /// Offline, Synchronizing, Error) and ConnectivityBloc.
 library;
 
+export 'src/caching_connectivity_repository.dart';
 export 'src/connectivity_bloc.dart';
 export 'src/connectivity_event.dart';
 export 'src/connectivity_repository.dart';

@@ -35,10 +35,21 @@ class ConnectivityBlocLoaded extends ConnectivityBlocState {
   const ConnectivityBlocLoaded({
     required this.status,
     required this.recentEvents,
+    required this.syncedAt,
+    required this.isStale,
   });
 
   final ConnectivityStatus status;
   final List<domain.ConnectivityEvent> recentEvents;
+
+  /// When this snapshot was last successfully fetched from the backend —
+  /// the older of the status/events cache timestamps, if they differ, so
+  /// the UI never claims fresher than the stalest piece it's showing.
+  final DateTime syncedAt;
+
+  /// True if either piece of this snapshot came from the offline cache
+  /// past its TTL rather than a live network response — see ADR-006.
+  final bool isStale;
 }
 
 class ConnectivityBlocFailed extends ConnectivityBlocState {
@@ -85,10 +96,18 @@ class ConnectivityBloc
         break;
     }
 
+    final cachedStatus = statusResult.value;
+    final cachedEvents = eventsResult.value;
+    final syncedAt = cachedStatus.syncedAt.isBefore(cachedEvents.syncedAt)
+        ? cachedStatus.syncedAt
+        : cachedEvents.syncedAt;
+
     emit(
       ConnectivityBlocLoaded(
-        status: statusResult.value,
-        recentEvents: eventsResult.value,
+        status: cachedStatus.value,
+        recentEvents: cachedEvents.value,
+        syncedAt: syncedAt,
+        isStale: cachedStatus.isStale || cachedEvents.isStale,
       ),
     );
   }
