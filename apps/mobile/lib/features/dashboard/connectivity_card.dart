@@ -1,14 +1,20 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:connectivity/connectivity.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../router/app_router.dart';
+import 'format_utils.dart';
 
 /// Renders live connectivity status inside the dashboard shell. Mapping
 /// [ConnectivityState] to a display label and [StatusTone] lives here,
 /// not in `packages/connectivity` or `packages/design_system` — the
 /// state machine stays UI-agnostic, the tone palette stays
 /// domain-agnostic, and this is the one place that knows both (see
-/// ADR-001).
+/// ADR-001). [connectivityStateLabel]/[connectivityStateTone]/
+/// [connectivityEventLine] are public so ConnectionDetailsPage reuses the
+/// exact same mapping instead of a second copy.
 ///
 /// The stale/offline banner below is the concrete answer to
 /// docs/PRODUCT_DISCOVERY.md's "never make cached data look identical to
@@ -61,8 +67,8 @@ class _ConnectivityView extends StatelessWidget {
                     children: [
                       Expanded(
                         child: StatusIndicator(
-                          label: _stateLabel(status.state),
-                          tone: _stateTone(status.state),
+                          label: connectivityStateLabel(status.state),
+                          tone: connectivityStateTone(status.state),
                         ),
                       ),
                       IconButton(
@@ -77,7 +83,7 @@ class _ConnectivityView extends StatelessWidget {
                   if (isStale) ...[
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Showing saved data from ${_relativeTime(syncedAt)} — no connection',
+                      'Showing saved data from ${relativeTime(syncedAt)} — no connection',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.warning,
                       ),
@@ -104,6 +110,14 @@ class _ConnectivityView extends StatelessWidget {
                             value: '${status.latencyMs} ms',
                           ),
                         ),
+                      if (status.downloadMbps != null)
+                        Expanded(
+                          child: _Metric(
+                            label: 'Download',
+                            value:
+                                '${status.downloadMbps!.toStringAsFixed(0)} Mbps',
+                          ),
+                        ),
                     ],
                   ),
                   if (recentEvents.isNotEmpty) ...[
@@ -114,11 +128,26 @@ class _ConnectivityView extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: AppSpacing.xs),
                         child: Text(
-                          _eventLine(event),
+                          connectivityEventLine(event),
                           style: AppTypography.caption,
                         ),
                       ),
                   ],
+                  const SizedBox(height: AppSpacing.sm),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => context.router.push(
+                        ConnectionDetailsRoute(
+                          status: status,
+                          recentEvents: recentEvents,
+                          syncedAt: syncedAt,
+                          isStale: isStale,
+                        ),
+                      ),
+                      child: const Text('View connection details'),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -146,7 +175,7 @@ class _Metric extends StatelessWidget {
   }
 }
 
-String _stateLabel(ConnectivityState state) => switch (state) {
+String connectivityStateLabel(ConnectivityState state) => switch (state) {
   ConnectivityState.unknown => 'Unknown',
   ConnectivityState.connecting => 'Connecting…',
   ConnectivityState.connected => 'Connected',
@@ -156,7 +185,7 @@ String _stateLabel(ConnectivityState state) => switch (state) {
   ConnectivityState.error => 'Connection error',
 };
 
-StatusTone _stateTone(ConnectivityState state) => switch (state) {
+StatusTone connectivityStateTone(ConnectivityState state) => switch (state) {
   ConnectivityState.connected => StatusTone.positive,
   ConnectivityState.degraded => StatusTone.warning,
   ConnectivityState.offline || ConnectivityState.error => StatusTone.negative,
@@ -165,29 +194,10 @@ StatusTone _stateTone(ConnectivityState state) => switch (state) {
   ConnectivityState.synchronizing => StatusTone.neutral,
 };
 
-String _eventLine(ConnectivityEvent event) {
+String connectivityEventLine(ConnectivityEvent event) {
   final reason = event.reason;
   if (reason != null && reason.isNotEmpty) {
     return reason;
   }
-  return '${_stateLabel(event.fromState)} → ${_stateLabel(event.toState)}';
-}
-
-/// A small local formatter rather than pulling in `intl`/`timeago` for one
-/// label — RoamPulse doesn't need locale-aware relative time yet.
-String _relativeTime(DateTime syncedAt) {
-  final elapsed = DateTime.now().difference(syncedAt);
-  if (elapsed < const Duration(minutes: 1)) {
-    return 'moments ago';
-  }
-  if (elapsed < const Duration(hours: 1)) {
-    final minutes = elapsed.inMinutes;
-    return '$minutes ${minutes == 1 ? 'minute' : 'minutes'} ago';
-  }
-  if (elapsed < const Duration(days: 1)) {
-    final hours = elapsed.inHours;
-    return '$hours ${hours == 1 ? 'hour' : 'hours'} ago';
-  }
-  final days = elapsed.inDays;
-  return '$days ${days == 1 ? 'day' : 'days'} ago';
+  return '${connectivityStateLabel(event.fromState)} → ${connectivityStateLabel(event.toState)}';
 }

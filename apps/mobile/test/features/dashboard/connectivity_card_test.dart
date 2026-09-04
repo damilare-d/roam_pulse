@@ -51,6 +51,8 @@ void main() {
       network: const NetworkInfo(carrierName: 'SoftBank', technology: '5G'),
       signalStrength: 'strong',
       latencyMs: 42,
+      downloadMbps: 87.0,
+      uploadMbps: 21.0,
       lastEventAt: DateTime.utc(2026, 9, 1),
     );
 
@@ -68,7 +70,9 @@ void main() {
     expect(find.text('Connected'), findsOneWidget);
     expect(find.textContaining('SoftBank'), findsOneWidget);
     expect(find.textContaining('42 ms'), findsOneWidget);
+    expect(find.textContaining('87 Mbps'), findsOneWidget);
     expect(find.textContaining('no connection'), findsNothing);
+    expect(find.text('View connection details'), findsOneWidget);
   });
 
   testWidgets('shows recent activity with the event reason', (tester) async {

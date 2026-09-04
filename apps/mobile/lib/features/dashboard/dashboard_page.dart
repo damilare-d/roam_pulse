@@ -2,10 +2,11 @@ import 'package:auto_route/auto_route.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:plans/plans.dart';
 
 import 'connectivity_card.dart';
 import 'dashboard_bloc.dart';
-import 'profile_repository.dart';
+import 'format_utils.dart';
 
 @RoutePage()
 class DashboardPage extends StatelessWidget {
@@ -14,20 +15,21 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          DashboardBloc(context.read<ProfileRepository>())
-            ..add(const DashboardRequested()),
+      create: (context) => DashboardBloc(
+        tripRepository: context.read<TripRepository>(),
+        planRepository: context.read<PlanRepository>(),
+        usageRepository: context.read<UsageRepository>(),
+      )..add(const DashboardRequested()),
       child: const _DashboardView(),
     );
   }
 }
 
-/// Each card below owns its own bloc/repository and fails independently —
-/// a traveller with a working (cached) connectivity section but a failed
-/// profile fetch still sees the connectivity section, not a full-page
-/// error. Nesting ConnectivityCard inside DashboardBloc's loaded state
-/// would defeat the point of Phase 6's offline-first caching by hiding a
-/// perfectly good cached result behind an unrelated failure.
+/// Trip/plan/usage render as one unit (they come from a single combined
+/// fetch in DashboardBloc), while ConnectivityCard is a fully independent
+/// sibling with its own bloc — see dashboard_bloc.dart's doc comment and
+/// ADR-006 for why a failed trip fetch must not hide a working cached
+/// connectivity section.
 class _DashboardView extends StatelessWidget {
   const _DashboardView();
 
@@ -37,52 +39,114 @@ class _DashboardView extends StatelessWidget {
       appBar: AppBar(title: const Text('RoamPulse')),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
-        children: const [
-          _ProfileCard(),
-          SizedBox(height: AppSpacing.md),
-          ConnectivityCard(),
+        children: [
+          BlocBuilder<DashboardBloc, DashboardState>(
+            builder: (context, state) {
+              return switch (state) {
+                DashboardInitial() || DashboardLoading() => const RoamPulseCard(
+                  child: LoadingView(message: 'Checking your trip…'),
+                ),
+                DashboardFailed(:final failure) => RoamPulseCard(
+                  child: ErrorView(
+                    message: failure.message,
+                    onRetry: () => context.read<DashboardBloc>().add(
+                      const DashboardRequested(),
+                    ),
+                  ),
+                ),
+                DashboardLoaded(:final trip, :final plan, :final usage) =>
+                  Column(
+                    children: [
+                      _TripCard(trip: trip, plan: plan),
+                      const SizedBox(height: AppSpacing.md),
+                      _UsageCard(usage: usage),
+                    ],
+                  ),
+              };
+            },
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const ConnectivityCard(),
         ],
       ),
     );
   }
 }
 
-class _ProfileCard extends StatelessWidget {
-  const _ProfileCard();
+class _TripCard extends StatelessWidget {
+  const _TripCard({required this.trip, required this.plan});
+
+  final TripSummary trip;
+  final PlanSummary plan;
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DashboardBloc, DashboardState>(
-      builder: (context, state) {
-        return switch (state) {
-          DashboardInitial() || DashboardLoading() => const RoamPulseCard(
-            child: LoadingView(message: 'Checking your trip…'),
+    return RoamPulseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Good to see you, ${trip.traveller.displayName}',
+            style: AppTypography.caption,
           ),
-          DashboardFailed(:final failure) => RoamPulseCard(
-            child: ErrorView(
-              message: failure.message,
-              onRetry: () =>
-                  context.read<DashboardBloc>().add(const DashboardRequested()),
-            ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            '${flagEmoji(trip.destination.countryCode)} ${trip.destination.city}',
+            style: AppTypography.title,
           ),
-          DashboardLoaded(:final profile) => RoamPulseCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Good to see you, ${profile.displayName}',
-                  style: AppTypography.title,
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            formatMegabytes(plan.dataRemainingMb),
+            style: AppTypography.heroNumber,
+          ),
+          Text('remaining', style: AppTypography.caption),
+          const SizedBox(height: AppSpacing.sm),
+          Text(expiryLabel(plan.daysRemaining), style: AppTypography.caption),
+        ],
+      ),
+    );
+  }
+}
+
+class _UsageCard extends StatelessWidget {
+  const _UsageCard({required this.usage});
+
+  final UsageSummary usage;
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = usage.byCategory.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return RoamPulseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Today's usage", style: AppTypography.label),
+          const SizedBox(height: AppSpacing.xs),
+          Text(formatBytes(usage.totalBytesUsed), style: AppTypography.title),
+          if (categories.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            for (final entry in categories)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.xs),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      usageCategoryLabel(entry.key),
+                      style: AppTypography.body,
+                    ),
+                    Text(
+                      formatBytes(entry.value),
+                      style: AppTypography.caption,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Home base: ${profile.homeCountry}',
-                  style: AppTypography.caption,
-                ),
-              ],
-            ),
-          ),
-        };
-      },
+              ),
+          ],
+        ],
+      ),
     );
   }
 }

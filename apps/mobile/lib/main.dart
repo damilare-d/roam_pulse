@@ -3,11 +3,11 @@ import 'dart:io' show Platform;
 import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:network/network.dart';
+import 'package:plans/plans.dart';
 import 'package:storage/storage.dart';
 
 import 'app.dart';
 import 'features/auth/auth_repository.dart';
-import 'features/dashboard/profile_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +17,9 @@ Future<void> main() async {
   );
   final store = await SharedPreferencesStore.create();
 
-  final profileRepository = HttpProfileRepository(apiClient);
+  final tripRepository = HttpTripRepository(apiClient);
+  final planRepository = HttpPlanRepository(apiClient);
+  final usageRepository = HttpUsageRepository(apiClient);
   final authRepository = HttpAuthRepository(apiClient, store);
   final connectivityRepository = CachingConnectivityRepository(
     HttpConnectivityRepository(apiClient),
@@ -26,7 +28,9 @@ Future<void> main() async {
 
   runApp(
     RoamPulseApp(
-      profileRepository: profileRepository,
+      tripRepository: tripRepository,
+      planRepository: planRepository,
+      usageRepository: usageRepository,
       authRepository: authRepository,
       connectivityRepository: connectivityRepository,
     ),

@@ -22,6 +22,8 @@ dependencies:
     path: ../../packages/design_system
   network:
     path: ../../packages/network
+  plans:
+    path: ../../packages/plans
   storage:
     path: ../../packages/storage
 
