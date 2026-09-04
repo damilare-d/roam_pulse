@@ -39,6 +39,7 @@ func main() {
 	connectivity := postgres.NewConnectivityRepo(pool)
 
 	router := httpapi.NewRouter(httpapi.Services{
+		Auth:         service.NewAuthService(travellers),
 		Profile:      service.NewProfileService(travellers),
 		Trip:         service.NewTripService(travellers, plans, destinations, networks, connectivity),
 		Plan:         service.NewPlanService(travellers, plans),

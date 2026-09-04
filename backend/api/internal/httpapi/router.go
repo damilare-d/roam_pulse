@@ -9,6 +9,7 @@ import (
 // Services bundles every application service the router wires to a route.
 // Diagnostics, AI, and sync endpoints join this set in Phases 6, 8, and 11.
 type Services struct {
+	Auth         *service.AuthService
 	Profile      *service.ProfileService
 	Trip         *service.TripService
 	Plan         *service.PlanService
@@ -22,6 +23,9 @@ func NewRouter(services Services) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	RegisterHealthRoutes(mux)
+
+	auth := NewAuthHandler(services.Auth)
+	mux.HandleFunc("POST /api/v1/auth/demo", auth.SignInDemo)
 
 	profile := NewProfileHandler(services.Profile)
 	mux.HandleFunc("GET /api/v1/profile", profile.Get)
