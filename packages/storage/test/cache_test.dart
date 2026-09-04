@@ -118,5 +118,39 @@ void main() {
 
       expect(await cache.read(), isNull);
     });
+
+    test('expire keeps the value but marks it stale', () async {
+      var now = DateTime.utc(2026, 1, 1, 12, 0, 0);
+      final cache = Cache<_Widget>(
+        store: InMemoryKeyValueStore(),
+        key: 'widget',
+        ttl: const Duration(minutes: 5),
+        fromJson: _fromJson,
+        toJson: _toJson,
+        clock: () => now,
+      );
+
+      await cache.write(const _Widget('Tokyo'));
+      await cache.expire();
+      final cached = await cache.read();
+
+      expect(cached, isNotNull);
+      expect(cached!.value.name, 'Tokyo');
+      expect(cached.isStale, isTrue);
+    });
+
+    test('expire on an empty cache is a no-op', () async {
+      final cache = Cache<_Widget>(
+        store: InMemoryKeyValueStore(),
+        key: 'widget',
+        ttl: const Duration(minutes: 5),
+        fromJson: _fromJson,
+        toJson: _toJson,
+      );
+
+      await cache.expire();
+
+      expect(await cache.read(), isNull);
+    });
   });
 }

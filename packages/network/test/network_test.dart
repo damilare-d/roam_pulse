@@ -103,4 +103,19 @@ void main() {
       },
     );
   });
+
+  group('ApiClient.addInterceptor', () {
+    test('attaches the interceptor to the underlying Dio instance', () {
+      final dio = Dio();
+      final client = ApiClient(
+        config: const ApiConfig(baseUrl: 'http://unused'),
+        dio: dio,
+      );
+      final interceptor = InterceptorsWrapper();
+
+      client.addInterceptor(interceptor);
+
+      expect(dio.interceptors, contains(interceptor));
+    });
+  });
 }

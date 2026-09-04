@@ -53,4 +53,21 @@ class Cache<T> {
   }
 
   Future<void> clear() => store.remove(key);
+
+  /// Rewrites the currently-cached value (if any) with a timestamp far in
+  /// the past, so the next [read] reports `isStale: true` without waiting
+  /// out the real TTL. Exists for Chaos Mode (Phase 9) to demonstrate the
+  /// offline/stale-data UI on demand — not used by any production code
+  /// path.
+  Future<void> expire() async {
+    final cached = await read();
+    if (cached == null) {
+      return;
+    }
+    final payload = jsonEncode({
+      'syncedAt': DateTime.fromMillisecondsSinceEpoch(0).toIso8601String(),
+      'value': toJson(cached.value),
+    });
+    await store.setString(key, payload);
+  }
 }

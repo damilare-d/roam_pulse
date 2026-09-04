@@ -180,4 +180,64 @@ void main() {
       expect(cached.value.first.reason, 'initial connection');
     });
   });
+
+  group('CachingConnectivityRepository dev-only cache controls', () {
+    test(
+      'clearCache removes both cached slots, so a later offline read has nothing to fall back on',
+      () async {
+        final store = InMemoryKeyValueStore();
+        final onlineRemote = _FakeRemote(
+          statusResult: Ok(
+            Cached(
+              value: _status(),
+              syncedAt: DateTime.utc(2026, 9, 1),
+              isStale: false,
+            ),
+          ),
+        );
+        final repo = CachingConnectivityRepository(onlineRemote, store);
+        await repo.getStatus();
+
+        await repo.clearCache();
+
+        final offlineRepo = CachingConnectivityRepository(
+          _FakeRemote(statusResult: const Err(NetworkUnavailableFailure())),
+          store,
+        );
+        final result = await offlineRepo.getStatus();
+
+        expect(result, isA<Err<Cached<ConnectivityStatus>>>());
+      },
+    );
+
+    test(
+      'expireCache marks the cached status stale without deleting it',
+      () async {
+        final store = InMemoryKeyValueStore();
+        final onlineRemote = _FakeRemote(
+          statusResult: Ok(
+            Cached(
+              value: _status(),
+              syncedAt: DateTime.utc(2026, 9, 1),
+              isStale: false,
+            ),
+          ),
+        );
+        final repo = CachingConnectivityRepository(onlineRemote, store);
+        await repo.getStatus();
+
+        await repo.expireCache();
+
+        final offlineRepo = CachingConnectivityRepository(
+          _FakeRemote(statusResult: const Err(NetworkUnavailableFailure())),
+          store,
+        );
+        final result = await offlineRepo.getStatus();
+
+        final cached = (result as Ok<Cached<ConnectivityStatus>>).value;
+        expect(cached.isStale, isTrue);
+        expect(cached.value.state, ConnectivityState.connected);
+      },
+    );
+  });
 }

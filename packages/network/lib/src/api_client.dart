@@ -28,6 +28,13 @@ class ApiClient {
 
   final Dio _dio;
 
+  /// Attaches an extra interceptor (e.g. Chaos Mode's fault injector,
+  /// Phase 9) without exposing the underlying [Dio] instance itself —
+  /// callers still can't reach into request internals beyond adding
+  /// interceptors through this one seam.
+  void addInterceptor(Interceptor interceptor) =>
+      _dio.interceptors.add(interceptor);
+
   /// GETs [path] and decodes the `data` object of the envelope with
   /// [fromJson]. Use for endpoints that return a single JSON object
   /// (profile, trips/current, plans/current, ...).

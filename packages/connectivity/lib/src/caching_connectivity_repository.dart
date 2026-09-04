@@ -63,6 +63,21 @@ class CachingConnectivityRepository implements ConnectivityRepository {
         return cached != null ? Ok(cached) : Err(failure);
     }
   }
+
+  /// Dev-only cache controls for Chaos Mode (Phase 9) — deliberately not
+  /// part of the [ConnectivityRepository] interface, since production
+  /// code (ConnectivityBloc, ConnectivityCard) has no legitimate reason to
+  /// call them and every other implementation would need a meaningless
+  /// no-op. Chaos Mode holds a reference to this concrete type instead.
+  Future<void> clearCache() async {
+    await _statusCache.clear();
+    await _eventsCache.clear();
+  }
+
+  Future<void> expireCache() async {
+    await _statusCache.expire();
+    await _eventsCache.expire();
+  }
 }
 
 // Cache<T> needs a single JSON object per slot, so the events list is
