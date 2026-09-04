@@ -3,4 +3,5 @@
 library;
 
 export 'src/app_failure.dart';
+export 'src/cached.dart';
 export 'src/result.dart';
