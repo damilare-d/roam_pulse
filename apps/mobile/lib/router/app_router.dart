@@ -6,6 +6,7 @@ import '../features/auth/demo_entry_page.dart';
 import '../features/auth/splash_page.dart';
 import '../features/dashboard/connection_details_page.dart';
 import '../features/dashboard/dashboard_page.dart';
+import '../features/diagnostics/diagnostics_page.dart';
 import 'auth_guard.dart';
 
 part 'app_router.gr.dart';
@@ -22,5 +23,6 @@ class AppRouter extends RootStackRouter {
     AutoRoute(page: DemoEntryRoute.page),
     AutoRoute(page: DashboardRoute.page, guards: [_authGuard]),
     AutoRoute(page: ConnectionDetailsRoute.page, guards: [_authGuard]),
+    AutoRoute(page: DiagnosticsRoute.page, guards: [_authGuard]),
   ];
 }

@@ -3,6 +3,7 @@ import 'package:connectivity/connectivity.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
+import '../../router/app_router.dart';
 import 'connectivity_card.dart'
     show connectivityEventLine, connectivityStateLabel, connectivityStateTone;
 import 'format_utils.dart';
@@ -124,6 +125,11 @@ class ConnectionDetailsPage extends StatelessWidget {
                 ],
               ),
             ),
+          const SizedBox(height: AppSpacing.md),
+          RoamPulseButton(
+            label: 'Run diagnostics',
+            onPressed: () => context.router.push(const DiagnosticsRoute()),
+          ),
         ],
       ),
     );

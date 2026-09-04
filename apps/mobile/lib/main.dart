@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
 import 'package:connectivity/connectivity.dart';
+import 'package:diagnostics/diagnostics.dart';
 import 'package:flutter/material.dart';
 import 'package:network/network.dart';
 import 'package:plans/plans.dart';
@@ -25,6 +26,7 @@ Future<void> main() async {
     HttpConnectivityRepository(apiClient),
     store,
   );
+  final diagnosticsRepository = HttpDiagnosticsRepository(apiClient);
 
   runApp(
     RoamPulseApp(
@@ -33,6 +35,7 @@ Future<void> main() async {
       usageRepository: usageRepository,
       authRepository: authRepository,
       connectivityRepository: connectivityRepository,
+      diagnosticsRepository: diagnosticsRepository,
     ),
   );
 }

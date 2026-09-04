@@ -16,6 +16,8 @@ dependencies:
   flutter_bloc: ^8.1.6
   connectivity:
     path: ../../packages/connectivity
+  diagnostics:
+    path: ../../packages/diagnostics
   core:
     path: ../../packages/core
   design_system:

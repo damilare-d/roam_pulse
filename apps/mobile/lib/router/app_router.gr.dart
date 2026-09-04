@@ -107,6 +107,22 @@ class DemoEntryRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [DiagnosticsPage]
+class DiagnosticsRoute extends PageRouteInfo<void> {
+  const DiagnosticsRoute({List<PageRouteInfo>? children})
+    : super(DiagnosticsRoute.name, initialChildren: children);
+
+  static const String name = 'DiagnosticsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DiagnosticsPage();
+    },
+  );
+}
+
+/// generated route for
 /// [SplashPage]
 class SplashRoute extends PageRouteInfo<void> {
   const SplashRoute({List<PageRouteInfo>? children})

@@ -1,5 +1,6 @@
 import 'package:connectivity/connectivity.dart';
 import 'package:design_system/design_system.dart';
+import 'package:diagnostics/diagnostics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:plans/plans.dart';
@@ -15,6 +16,7 @@ class RoamPulseApp extends StatelessWidget {
     required this.usageRepository,
     required this.authRepository,
     required this.connectivityRepository,
+    required this.diagnosticsRepository,
     super.key,
   }) : _router = AppRouter(AuthGuard(authRepository));
 
@@ -23,6 +25,7 @@ class RoamPulseApp extends StatelessWidget {
   final UsageRepository usageRepository;
   final AuthRepository authRepository;
   final ConnectivityRepository connectivityRepository;
+  final DiagnosticsRepository diagnosticsRepository;
   final AppRouter _router;
 
   @override
@@ -35,6 +38,9 @@ class RoamPulseApp extends StatelessWidget {
         RepositoryProvider<AuthRepository>.value(value: authRepository),
         RepositoryProvider<ConnectivityRepository>.value(
           value: connectivityRepository,
+        ),
+        RepositoryProvider<DiagnosticsRepository>.value(
+          value: diagnosticsRepository,
         ),
       ],
       child: MaterialApp.router(
