@@ -1,7 +1,7 @@
 # Holafly Senior Flutter Developer — Requirement Mapping
 
 Status: living document, updated at the end of every phase (§50
-Definition of Done requires it) — currently through Phase 3. Doubles as a
+Definition of Done requires it) — currently through Phase 4. Doubles as a
 progress record and interview leave-behind.
 
 Legend: 🔲 planned · 🟡 in progress · ✅ done (tests + docs included)
@@ -10,8 +10,8 @@ Legend: 🔲 planned · 🟡 in progress · ✅ done (tests + docs included)
 |---|---|---|---|---|---|
 | Product discovery | Problem framing, user journeys | `docs/PRODUCT_DISCOVERY.md` | — | This document set | ✅ (Phase 0) |
 | Modular / monorepo architecture | `packages/*` workspace | Dart pub workspace + Melos; `core`, `network`, `design_system`, `storage` now have real implementations, not just scaffolds | `flutter pub get`/`melos run analyze`/`melos run test` pass across all 9 packages + app | Repo tree walkthrough | 🟡 |
-| Flutter architecture (clean layering) | Presentation → BLoC → Repository → DataSource | `DashboardPage` → `DashboardBloc` → `ProfileRepository` → `ApiClient` (reference slice); see ADR-001 | `dashboard_bloc_test.dart`, `dashboard_page_test.dart` (zero network access) | Live Windows desktop run: "Good to see you, Alex Morgan" pulled from the real backend | 🟡 |
-| BLoC state management | `DashboardBloc` shipped (Phase 3); `ConnectivityBloc`, `UsageBloc`, `PlanBloc`, `DiagnosticsBloc`, `SyncBloc` in Phase 5+ | `flutter_bloc`, sealed event/state classes; see ADR-002 | 3 `DashboardBloc` unit tests (initial state, success path, failure path) | Live demo: loading → loaded card render | 🟡 |
+| Flutter architecture (clean layering) | Presentation → BLoC → Repository → DataSource | `DashboardPage`/`DemoEntryPage` → Bloc → Repository → `ApiClient`; `AuthGuard` (`auto_route`) protects `DashboardRoute`, `SplashPage` does the one-shot launch check; see ADR-001, ADR-010 | `dashboard_bloc_test.dart`, `dashboard_page_test.dart`, `auth_bloc_test.dart`, `auth_repository_test.dart`, `demo_entry_page_test.dart` (all zero network access) | Live Windows desktop run: splash → demo entry → "Continue in demo mode" → dashboard, all against the real backend | 🟡 |
+| BLoC state management | `DashboardBloc` (Phase 3), `AuthBloc` (Phase 4) shipped; `ConnectivityBloc`, `UsageBloc`, `PlanBloc`, `DiagnosticsBloc`, `SyncBloc` in Phase 5+ | `flutter_bloc`, sealed event/state classes; see ADR-002 | 6 unit tests across `DashboardBloc`/`AuthBloc` (initial state, success path, failure path each) | Live demo: splash → entry → loading → dashboard | 🟡 |
 | Advanced networking | Dio client with error classification mirroring backend `apperror` codes; timeouts configured | `packages/network` (`ApiClient`, `mapDioException`) | 6 unit tests covering timeout/connection/NOT_FOUND/VALIDATION_ERROR/fallback-by-status/unknown | Live HTTP round-trip (Dio log) against the Go backend | 🟡 |
 | Advanced caching / offline-first | Stale-while-revalidate repository | `packages/storage` + `packages/connectivity`/`plans` repos | Cache TTL/staleness/miss tests | Offline demo (§27 scenario 2/3) | 🔲 |
 | Native Android integration | Home-screen App Widget | Android widget module + `NativeWidgetService` bridge | Dart payload tests + native transform tests | Home-screen widget demo | 🔲 |
@@ -25,5 +25,5 @@ Legend: 🔲 planned · 🟡 in progress · ✅ done (tests + docs included)
 | Observability | Latency, sync duration, cache hit/miss, connectivity transitions, AI outcome logging | `packages/analytics` + backend structured logs | Log-emission unit tests | Dev console log sample | 🔲 |
 | Error handling | `AppFailure` hierarchy (Flutter) mirrors `apperror` codes (Go) | `packages/core` + `packages/network`'s `mapDioException` + Go error envelope | Failure-mapping unit tests both sides (Go `apperror_test.go`, Dart `network_test.dart`) | Error-state widget demo (`ErrorView` + retry) | 🟡 |
 | Technical documentation | ADRs, architecture docs, API docs | `docs/` | — | This document set | 🟡 |
-| Architecture decisions | ADR-001..010 | `docs/decisions/`: ADR-001 (Flutter layering), ADR-002 (BLoC), ADR-003 (monorepo), ADR-004 (Go backend), ADR-005 (PostgreSQL) written; remaining 5 land with their phases | — | ADR walkthrough | 🟡 |
+| Architecture decisions | ADR-001..010 | `docs/decisions/`: ADR-001 (Flutter layering), ADR-002 (BLoC), ADR-003 (monorepo), ADR-004 (Go backend), ADR-005 (PostgreSQL), ADR-010 (demo auth) written; remaining 4 land with their phases | — | ADR walkthrough | 🟡 |
 | Long-term codebase health | Package ownership boundaries, lint discipline, no dead abstractions | Ongoing | Static analysis in CI | Codebase tour | 🔲 |
