@@ -11,6 +11,11 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
+  flutter_bloc: ^8.1.6
+  core:
+    path: ../core
+  network:
+    path: ../network
 
 dev_dependencies:
   flutter_test:
