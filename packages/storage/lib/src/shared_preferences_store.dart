@@ -9,6 +9,13 @@ class SharedPreferencesStore implements KeyValueStore {
 
   final SharedPreferences _prefs;
 
+  /// Builds a [SharedPreferencesStore] without callers needing to depend
+  /// on `package:shared_preferences` directly.
+  static Future<SharedPreferencesStore> create() async {
+    final prefs = await SharedPreferences.getInstance();
+    return SharedPreferencesStore(prefs);
+  }
+
   @override
   Future<String?> getString(String key) async => _prefs.getString(key);
 

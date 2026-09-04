@@ -53,6 +53,27 @@ class ApiClient {
     }
   }
 
+  /// POSTs [data] to [path] and decodes the `data` object of the response
+  /// envelope with [fromJson].
+  Future<Result<T>> postJson<T>(
+    String path, {
+    required T Function(Map<String, dynamic> json) fromJson,
+    Object? data,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(path, data: data);
+      final responseData = response.data?['data'];
+      if (responseData is! Map<String, dynamic>) {
+        return const Err(ParsingFailure());
+      }
+      return Ok(fromJson(responseData));
+    } on DioException catch (e) {
+      return Err(mapDioException(e));
+    } on TypeError {
+      return const Err(ParsingFailure());
+    }
+  }
+
   /// GETs [path] and decodes the `data` array of the envelope with
   /// [fromJson] applied element-wise. Use for list endpoints
   /// (connectivity/events, ...).
