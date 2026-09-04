@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:network/network.dart';
 import 'package:storage/storage.dart';
@@ -18,11 +19,13 @@ Future<void> main() async {
 
   final profileRepository = HttpProfileRepository(apiClient);
   final authRepository = HttpAuthRepository(apiClient, store);
+  final connectivityRepository = HttpConnectivityRepository(apiClient);
 
   runApp(
     RoamPulseApp(
       profileRepository: profileRepository,
       authRepository: authRepository,
+      connectivityRepository: connectivityRepository,
     ),
   );
 }

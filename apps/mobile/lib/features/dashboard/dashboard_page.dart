@@ -3,6 +3,7 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'connectivity_card.dart';
 import 'dashboard_bloc.dart';
 import 'profile_repository.dart';
 
@@ -39,29 +40,28 @@ class _DashboardView extends StatelessWidget {
               onRetry: () =>
                   context.read<DashboardBloc>().add(const DashboardRequested()),
             ),
-            DashboardLoaded(:final profile) => Padding(
+            DashboardLoaded(:final profile) => ListView(
               padding: const EdgeInsets.all(AppSpacing.md),
-              child: RoamPulseCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Good to see you, ${profile.displayName}',
-                      style: AppTypography.title,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      'Home base: ${profile.homeCountry}',
-                      style: AppTypography.caption,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    const StatusIndicator(
-                      label: 'Connected to RoamPulse',
-                      tone: StatusTone.positive,
-                    ),
-                  ],
+              children: [
+                RoamPulseCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Good to see you, ${profile.displayName}',
+                        style: AppTypography.title,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Home base: ${profile.homeCountry}',
+                        style: AppTypography.caption,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: AppSpacing.md),
+                const ConnectivityCard(),
+              ],
             ),
           };
         },

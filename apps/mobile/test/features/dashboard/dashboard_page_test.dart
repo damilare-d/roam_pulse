@@ -1,3 +1,4 @@
+import 'package:connectivity/connectivity.dart';
 import 'package:core/core.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
@@ -16,11 +17,27 @@ class _FakeProfileRepository implements ProfileRepository {
   Future<Result<TravellerProfile>> getProfile() async => _result;
 }
 
+class _FakeConnectivityRepository implements ConnectivityRepository {
+  @override
+  Future<Result<ConnectivityStatus>> getStatus() async =>
+      const Err(NetworkUnavailableFailure());
+
+  @override
+  Future<Result<List<ConnectivityEvent>>> getRecentEvents({
+    int limit = 20,
+  }) async => const Ok([]);
+}
+
 Widget _wrap(ProfileRepository repository) {
   return MaterialApp(
     theme: AppTheme.light,
-    home: RepositoryProvider<ProfileRepository>.value(
-      value: repository,
+    home: MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<ProfileRepository>.value(value: repository),
+        RepositoryProvider<ConnectivityRepository>.value(
+          value: _FakeConnectivityRepository(),
+        ),
+      ],
       child: const DashboardPage(),
     ),
   );
