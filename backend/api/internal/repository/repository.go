@@ -24,6 +24,10 @@ type PlanRepository interface {
 	GetUsage(ctx context.Context, planID string) ([]domain.UsageRecord, error)
 }
 
+type EsimRepository interface {
+	GetByID(ctx context.Context, id string) (*domain.Esim, error)
+}
+
 type DestinationRepository interface {
 	GetByID(ctx context.Context, id string) (*domain.Destination, error)
 }
@@ -35,4 +39,14 @@ type NetworkRepository interface {
 type ConnectivityRepository interface {
 	GetLatestSession(ctx context.Context, planID string) (*domain.NetworkSession, error)
 	GetRecentEvents(ctx context.Context, planID string, limit int) ([]domain.ConnectivityEvent, error)
+}
+
+// DiagnosticRepository persists diagnostic runs. Both the deterministic
+// engine (Phase 8) and the AI engine (Phase 11) write to the same
+// diagnostic_results table via SaveResult, tagged by
+// domain.DiagnosticEngineKind — this is how the two stay auditable and
+// comparable rather than living in separate, disconnected logs.
+type DiagnosticRepository interface {
+	CreateSession(ctx context.Context, planID string, trigger domain.DiagnosticTrigger) (*domain.DiagnosticSession, error)
+	SaveResult(ctx context.Context, sessionID string, result domain.DiagnosticResultRecord) error
 }
