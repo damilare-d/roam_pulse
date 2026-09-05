@@ -6,6 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:plans/plans.dart';
 
 import '../../router/app_router.dart';
+import '../native_widget/native_widget_service.dart';
+import '../native_widget/plan_widget_data.dart';
 import 'connectivity_card.dart';
 import 'dashboard_bloc.dart';
 import 'format_utils.dart';
@@ -52,7 +54,20 @@ class _DashboardView extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          BlocBuilder<DashboardBloc, DashboardState>(
+          BlocConsumer<DashboardBloc, DashboardState>(
+            listener: (context, state) {
+              if (state case DashboardLoaded(:final trip, :final plan)) {
+                context.read<NativeWidgetService>().updatePlan(
+                  PlanWidgetData(
+                    destinationCity: trip.destination.city,
+                    countryCode: trip.destination.countryCode,
+                    dataRemainingMb: plan.dataRemainingMb,
+                    dataAllowanceMb: plan.dataAllowanceMb,
+                    daysRemaining: plan.daysRemaining,
+                  ),
+                );
+              }
+            },
             builder: (context, state) {
               return switch (state) {
                 DashboardInitial() || DashboardLoading() => const RoamPulseCard(

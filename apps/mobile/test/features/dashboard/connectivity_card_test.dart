@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:roam_pulse/features/dashboard/connectivity_card.dart';
+import 'package:roam_pulse/features/native_widget/connectivity_widget_data.dart';
+import 'package:roam_pulse/features/native_widget/native_widget_service.dart';
+import 'package:roam_pulse/features/native_widget/plan_widget_data.dart';
 
 class _FakeConnectivityRepository implements ConnectivityRepository {
   _FakeConnectivityRepository({this.statusResult, this.eventsResult});
@@ -30,12 +33,25 @@ class _FakeConnectivityRepository implements ConnectivityRepository {
       );
 }
 
+class _FakeNativeWidgetService implements NativeWidgetService {
+  @override
+  Future<void> updateConnectivity(ConnectivityWidgetData data) async {}
+
+  @override
+  Future<void> updatePlan(PlanWidgetData data) async {}
+}
+
 Widget _wrap(ConnectivityRepository repository) {
   return MaterialApp(
     theme: AppTheme.light,
     home: Scaffold(
-      body: RepositoryProvider<ConnectivityRepository>.value(
-        value: repository,
+      body: MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<ConnectivityRepository>.value(value: repository),
+          RepositoryProvider<NativeWidgetService>.value(
+            value: _FakeNativeWidgetService(),
+          ),
+        ],
         child: const ConnectivityCard(),
       ),
     ),

@@ -6,6 +6,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plans/plans.dart';
 import 'package:roam_pulse/features/dashboard/dashboard_page.dart';
+import 'package:roam_pulse/features/native_widget/connectivity_widget_data.dart';
+import 'package:roam_pulse/features/native_widget/native_widget_service.dart';
+import 'package:roam_pulse/features/native_widget/plan_widget_data.dart';
 
 class _FakeTripRepository implements TripRepository {
   _FakeTripRepository(this._result);
@@ -63,6 +66,14 @@ class _FakeConnectivityRepository implements ConnectivityRepository {
   );
 }
 
+class _FakeNativeWidgetService implements NativeWidgetService {
+  @override
+  Future<void> updateConnectivity(ConnectivityWidgetData data) async {}
+
+  @override
+  Future<void> updatePlan(PlanWidgetData data) async {}
+}
+
 final _travelPlan = TravelPlan(
   id: 'p-1',
   destinationId: 'd-1',
@@ -99,6 +110,9 @@ Widget _wrap({required Result<TripSummary> trip, Result<PlanSummary>? plan}) {
         ),
         RepositoryProvider<ConnectivityRepository>.value(
           value: _FakeConnectivityRepository(),
+        ),
+        RepositoryProvider<NativeWidgetService>.value(
+          value: _FakeNativeWidgetService(),
         ),
       ],
       child: const DashboardPage(),

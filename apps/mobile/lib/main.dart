@@ -12,6 +12,7 @@ import 'app.dart';
 import 'features/auth/auth_repository.dart';
 import 'features/chaos/chaos_interceptor.dart';
 import 'features/chaos/chaos_mode_controller.dart';
+import 'features/native_widget/method_channel_native_widget_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +31,7 @@ Future<void> main() async {
     store,
   );
   final diagnosticsRepository = HttpDiagnosticsRepository(apiClient);
+  final nativeWidgetService = MethodChannelNativeWidgetService();
 
   // Chaos Mode (Phase 9) only exists at all in debug builds — the
   // controller is never constructed, the interceptor is never attached,
@@ -49,6 +51,7 @@ Future<void> main() async {
       authRepository: authRepository,
       connectivityRepository: connectivityRepository,
       diagnosticsRepository: diagnosticsRepository,
+      nativeWidgetService: nativeWidgetService,
       chaosModeController: chaosModeController,
       chaosCacheRepository: kDebugMode ? connectivityRepository : null,
     ),
@@ -56,11 +59,19 @@ Future<void> main() async {
 }
 
 /// The Android emulator can't reach the host machine via `localhost` — it
-/// needs the special `10.0.2.2` loopback alias. Every other target
-/// (desktop, iOS simulator) reaches the dev backend via plain `localhost`.
-/// This whole scheme is a Phase 3 dev-only convenience; Phase 4+ moves
-/// backend configuration to a proper build-time/environment setup.
+/// needs the special `10.0.2.2` loopback alias, which only works for the
+/// emulator, not a physical device on the same LAN (which needs the
+/// host's actual IP instead). `--dart-define=BACKEND_HOST=<ip>` overrides
+/// both for a real-device run, e.g. `flutter run --dart-define=BACKEND_HOST=10.71.200.14`.
+/// Every other target (desktop, iOS simulator) reaches the dev backend
+/// via plain `localhost`. This whole scheme is a Phase 3 dev-only
+/// convenience; Phase 4+ moves backend configuration to a proper
+/// build-time/environment setup.
 String _resolveBaseUrl() {
+  const hostOverride = String.fromEnvironment('BACKEND_HOST');
+  if (hostOverride.isNotEmpty) {
+    return 'http://$hostOverride:8080';
+  }
   if (Platform.isAndroid) {
     return 'http://10.0.2.2:8080';
   }

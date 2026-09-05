@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../router/app_router.dart';
+import '../native_widget/connectivity_widget_data.dart';
+import '../native_widget/native_widget_service.dart';
 import 'format_utils.dart';
 
 /// Renders live connectivity status inside the dashboard shell. Mapping
@@ -38,7 +40,19 @@ class _ConnectivityView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ConnectivityBloc, ConnectivityBlocState>(
+    return BlocConsumer<ConnectivityBloc, ConnectivityBlocState>(
+      listener: (context, state) {
+        if (state case ConnectivityBlocLoaded(:final status, :final syncedAt)) {
+          context.read<NativeWidgetService>().updateConnectivity(
+            ConnectivityWidgetData(
+              state: status.state.name,
+              carrierName: status.network.carrierName,
+              technology: status.network.technology,
+              lastSyncedAt: syncedAt,
+            ),
+          );
+        }
+      },
       builder: (context, state) {
         return switch (state) {
           ConnectivityBlocInitial() ||

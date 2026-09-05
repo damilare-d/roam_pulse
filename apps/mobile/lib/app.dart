@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import 'features/auth/auth_repository.dart';
 import 'features/chaos/chaos_mode_controller.dart';
+import 'features/native_widget/native_widget_service.dart';
 import 'router/app_router.dart';
 import 'router/auth_guard.dart';
 
@@ -19,6 +20,7 @@ class RoamPulseApp extends StatelessWidget {
     required this.authRepository,
     required this.connectivityRepository,
     required this.diagnosticsRepository,
+    required this.nativeWidgetService,
     this.chaosModeController,
     this.chaosCacheRepository,
     super.key,
@@ -30,6 +32,7 @@ class RoamPulseApp extends StatelessWidget {
   final AuthRepository authRepository;
   final ConnectivityRepository connectivityRepository;
   final DiagnosticsRepository diagnosticsRepository;
+  final NativeWidgetService nativeWidgetService;
 
   /// Non-null only in debug builds (see main.dart) — Chaos Mode's route and
   /// entry-point button read these two directly, so when they're absent
@@ -52,6 +55,9 @@ class RoamPulseApp extends StatelessWidget {
         ),
         RepositoryProvider<DiagnosticsRepository>.value(
           value: diagnosticsRepository,
+        ),
+        RepositoryProvider<NativeWidgetService>.value(
+          value: nativeWidgetService,
         ),
         if (chaosModeController != null)
           ChangeNotifierProvider<ChaosModeController>.value(
