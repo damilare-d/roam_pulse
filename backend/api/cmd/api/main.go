@@ -40,6 +40,9 @@ func main() {
 	esims := postgres.NewEsimRepo(pool)
 	diagnosticsRepo := postgres.NewDiagnosticRepo(pool)
 
+	diagnosticsService := service.NewDiagnosticService(travellers, plans, esims, connectivity, diagnosticsRepo)
+	claudeClient := service.NewClaudeClient(cfg.AnthropicAPIKey)
+
 	router := httpapi.NewRouter(httpapi.Services{
 		Auth:         service.NewAuthService(travellers),
 		Profile:      service.NewProfileService(travellers),
@@ -49,7 +52,8 @@ func main() {
 		Connectivity: service.NewConnectivityService(travellers, plans, networks, connectivity),
 		Destination:  service.NewDestinationService(destinations),
 		Network:      service.NewNetworkService(networks),
-		Diagnostics:  service.NewDiagnosticService(travellers, plans, esims, connectivity, diagnosticsRepo),
+		Diagnostics:  diagnosticsService,
+		AIRecovery:   service.NewAIRecoveryService(diagnosticsService, claudeClient, diagnosticsRepo),
 	})
 
 	server := &http.Server{

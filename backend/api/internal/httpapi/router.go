@@ -7,7 +7,7 @@ import (
 )
 
 // Services bundles every application service the router wires to a route.
-// AI and sync endpoints join this set in Phases 11 and 6/13.
+// The sync endpoint joins this set in Phase 6/13.
 type Services struct {
 	Auth         *service.AuthService
 	Profile      *service.ProfileService
@@ -18,6 +18,7 @@ type Services struct {
 	Destination  *service.DestinationService
 	Network      *service.NetworkService
 	Diagnostics  *service.DiagnosticService
+	AIRecovery   *service.AIRecoveryService
 }
 
 func NewRouter(services Services) *http.ServeMux {
@@ -52,6 +53,9 @@ func NewRouter(services Services) *http.ServeMux {
 
 	diagnostics := NewDiagnosticsHandler(services.Diagnostics)
 	mux.HandleFunc("POST /api/v1/diagnostics", diagnostics.Run)
+
+	aiRecovery := NewAIRecoveryHandler(services.AIRecovery)
+	mux.HandleFunc("POST /api/v1/diagnostics/recommend", aiRecovery.Recommend)
 
 	return mux
 }

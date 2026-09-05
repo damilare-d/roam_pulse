@@ -34,30 +34,30 @@ func NewDiagnosticService(
 	}
 }
 
-// RunDiagnostics gathers the traveller's current plan/eSIM/network state,
-// runs the deterministic engine (never Claude — see ADR-009), and persists
-// both the session and result so this run is auditable alongside any
-// future AI-engine run on the same plan (domain.DiagnosticEngineAI writes
-// to the same table in Phase 11).
-func (s *DiagnosticService) RunDiagnostics(ctx context.Context) (*Diagnosis, error) {
+// Diagnose gathers the traveller's current plan/eSIM/network state and
+// runs the deterministic engine (never Claude — see ADR-009), without
+// persisting anything. Exported so AIRecoveryService (Phase 11) can reuse
+// the same gathering logic ahead of a Claude call rather than duplicating
+// it.
+func (s *DiagnosticService) Diagnose(ctx context.Context) (Diagnosis, string, error) {
 	traveller, err := s.travellers.GetDemoProfile(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("diagnostic service: get traveller: %w", err)
+		return Diagnosis{}, "", fmt.Errorf("diagnostic service: get traveller: %w", err)
 	}
 
 	plan, err := s.plans.GetCurrentPlan(ctx, traveller.ID)
 	if err != nil {
-		return nil, fmt.Errorf("diagnostic service: get current plan: %w", err)
+		return Diagnosis{}, "", fmt.Errorf("diagnostic service: get current plan: %w", err)
 	}
 
 	esim, err := s.esims.GetByID(ctx, plan.EsimID)
 	if err != nil {
-		return nil, fmt.Errorf("diagnostic service: get esim: %w", err)
+		return Diagnosis{}, "", fmt.Errorf("diagnostic service: get esim: %w", err)
 	}
 
 	session, err := s.connectivity.GetLatestSession(ctx, plan.ID)
 	if err != nil {
-		return nil, fmt.Errorf("diagnostic service: get latest session: %w", err)
+		return Diagnosis{}, "", fmt.Errorf("diagnostic service: get latest session: %w", err)
 	}
 
 	diagnosis := Diagnose(DiagnosticInput{
@@ -68,9 +68,22 @@ func (s *DiagnosticService) RunDiagnostics(ctx context.Context) (*Diagnosis, err
 		LatencyMs:         session.LatencyMs,
 	})
 
+	return diagnosis, plan.ID, nil
+}
+
+// RunDiagnostics gathers state, runs the deterministic engine, and persists
+// both the session and result so this run is auditable alongside any
+// future AI-engine run on the same plan (domain.DiagnosticEngineAI writes
+// to the same table — see AIRecoveryService, Phase 11).
+func (s *DiagnosticService) RunDiagnostics(ctx context.Context) (*Diagnosis, error) {
+	diagnosis, planID, err := s.Diagnose(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// A logging failure shouldn't deny the traveller a diagnosis they're
 	// actively waiting on — log and continue rather than fail the request.
-	if err := s.persist(ctx, plan.ID, diagnosis); err != nil {
+	if err := s.persist(ctx, planID, diagnosis); err != nil {
 		log.Printf("diagnostic service: failed to persist diagnostic run: %v", err)
 	}
 
