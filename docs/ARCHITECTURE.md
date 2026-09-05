@@ -280,17 +280,22 @@ it never talks to Anthropic directly.
 - The AI recovery agent's tests run against a **fake** `AIClient` — no
   live Claude API calls in CI or in the integration suite (see ADR-008).
 
-## 11. CI/CD strategy (seed — full doc in Phase 14)
+## 11. CI/CD strategy
 
-Separate workflows so a backend-only or mobile-only change doesn't wait on
-unrelated jobs:
+Four independent per-surface workflows so a backend-only or mobile-only
+change doesn't wait on unrelated jobs. Full detail (why four separate
+workflows, why `integration.yml` runs Linux desktop under `xvfb` rather
+than reusing the Windows target verified locally, `services:` vs.
+provisioning Postgres another way): `docs/CI_CD.md` (Phase 14).
 
 ```mermaid
 flowchart LR
-    PR[Pull Request] --> FlutterCI[flutter-ci.yml: format, analyze, unit+widget tests, coverage]
+    PR[Pull Request / push to main] --> FlutterCI[flutter-ci.yml: format, analyze, unit+widget tests, coverage]
     PR --> BackendCI[backend-ci.yml: gofmt, vet, tests, build]
-    PR --> IntegrationCI[integration.yml: integration_test suite]
+    PR --> ToolsAiCI[tools-ai-ci.yml: gofmt, vet, tests, build]
+    PR --> IntegrationCI[integration.yml: Postgres service + real backend + 5 integration_test scenarios on Linux desktop]
     FlutterCI --> Merge
     BackendCI --> Merge
+    ToolsAiCI --> Merge
     IntegrationCI --> Merge
 ```

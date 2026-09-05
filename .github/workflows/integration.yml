@@ -1,0 +1,93 @@
+name: integration
+
+on:
+  pull_request:
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "backend/**"
+      - ".github/workflows/integration.yml"
+  push:
+    branches: [main]
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: roampulse
+          POSTGRES_PASSWORD: roampulse
+          POSTGRES_DB: roampulse_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://roampulse:roampulse@localhost:5432/roampulse_dev?sslmode=disable
+      PORT: 8080
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.35.2"
+          channel: stable
+
+      - name: Install Linux desktop build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev xvfb
+
+      - name: Enable Linux desktop
+        run: flutter config --enable-linux-desktop
+
+      - name: Resolve workspace dependencies
+        run: flutter pub get
+
+      - name: Migrate and seed the database
+        working-directory: backend/api
+        run: go run ./cmd/seed
+
+      - name: Start the backend
+        working-directory: backend/api
+        run: |
+          nohup go run ./cmd/api > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/health > /dev/null; then
+              echo "backend is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "backend never became healthy" >&2
+          cat "$GITHUB_WORKSPACE/backend.log"
+          exit 1
+
+      - name: Run integration tests
+        working-directory: apps/mobile
+        run: |
+          set -e
+          for f in integration_test/*_test.dart; do
+            echo "::group::$f"
+            xvfb-run -a flutter test "$f" -d linux
+            echo "::endgroup::"
+          done
+
+      - name: Upload backend log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log
+          path: backend.log
+          if-no-files-found: ignore
