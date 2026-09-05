@@ -1,8 +1,8 @@
 # RoamPulse — Product Discovery
 
-Status: Phase 0 draft. This document is the product foundation for every later
-engineering decision — features are not added unless they trace back to a
-line in this file.
+Written in Phase 0 and unchanged since — the product foundation every later
+engineering decision traces back to. See `docs/HOLAFLY_ROLE_MAPPING.md` for
+what's actually been built against it.
 
 ## 1. User problem
 

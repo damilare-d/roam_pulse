@@ -1,9 +1,18 @@
-# RoamPulse — Initial Architecture (Phase 0 seed)
+# RoamPulse — Architecture
 
-Status: seed document. Sections here get their own dedicated docs
-(`CACHING_STRATEGY.md`, `NATIVE_WIDGETS.md`, `AI_WORKFLOW.md`,
-`TESTING_STRATEGY.md`, `API.md`) as each phase implements them. This file
-stays as the high-level map.
+Started as a Phase 0 seed document; sections that grew large enough to
+need their own space got a dedicated doc as each phase landed, rather
+than the specific filenames originally sketched here — this file stays
+the high-level map and cross-links out to each:
+
+- Caching: ADR-006
+- Native widgets: ADR-007
+- The Connectivity Recovery Agent: ADR-008 (§9 below has the corrected
+  diagram)
+- Testing strategy: `docs/INTEGRATION_TESTING.md` (§10)
+- CI/CD: `docs/CI_CD.md` (§11)
+- The AI-assisted engineering workflow (a different "AI" topic from the
+  recovery agent): `docs/AI_DEVELOPMENT_WORKFLOW.md`
 
 ## 1. Proposed repository structure
 
