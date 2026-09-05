@@ -60,17 +60,17 @@ The one workflow that's more than "run a formatter/analyzer/test binary":
 
 ## Consequences
 
-- This workflow is new and has not yet been observed passing on GitHub's
-  infrastructure at the time of writing — every other verification in
-  this project has been either a local live run or a CI run already
-  watched to green; this one is designed from the same principles
-  (mirror what's already verified locally wherever possible, add the
-  smallest new surface needed) but the actual GitHub Actions runner
-  environment cannot be rehearsed locally. The next push is the real
-  test.
-- If Linux desktop under `xvfb` turns out not to work reliably in CI, the
-  fallback is `-d web-server` (an embedded headless Chrome-based target
+- Passed on the first push: `integration-test` completed in 4m18s,
+  Postgres/migrate/seed/backend-health-check/all 5 Linux-desktop-under-`xvfb`
+  scenarios green with no iteration needed
+  (github.com/damilare-d/roam_pulse/actions/runs/33968772257). The design
+  reasoning above (mirror what's verified locally, add the smallest new
+  surface needed) held up against a genuinely new, previously-unrehearsed
+  CI environment.
+- If Linux desktop under `xvfb` ever turns out not to work reliably (a
+  future Flutter/Ubuntu version drift, say), the fallback is
+  `-d web-server` (an embedded headless Chrome-based target
   `integration_test` also supports) — noted here rather than built
   pre-emptively, since building a second, unverified fallback path before
-  the first one has even run once would be exactly the kind of untested
-  complexity this project avoids elsewhere.
+  the first one had even run once would have been exactly the kind of
+  untested complexity this project avoids elsewhere.
