@@ -25,7 +25,11 @@ roampulse/
 │   └── api/                     # Go REST API, PostgreSQL, migrations
 ├── tools/
 │   └── ai/                      # AI-assisted dev workflow scripts
-├── integration_test/            # End-to-end scenarios (§27)
+├── apps/mobile/integration_test/ # End-to-end scenarios (§27) — corrected
+│                                 # from this diagram's original repo-root
+│                                 # placement; Flutter's integration_test
+│                                 # tooling requires it live inside the
+│                                 # Flutter project (Phase 13)
 ├── docs/
 │   └── decisions/                # ADRs
 ├── scripts/
@@ -232,40 +236,49 @@ tests for the storage→UI transform on each platform.
 
 ## 9. AI agent architecture
 
+Implemented in Phase 11 — see ADR-008 for the full design and rationale.
+The version below corrects this section's original Phase 0 sketch, which
+had Claude itself calling a constrained tool set to gather data; what was
+actually built gathers data first (reusing the deterministic engine's own
+logic) and only ever asks Claude for one thing: a structured
+recommendation grounded in a diagnosis it's already been handed.
+
 ```mermaid
 flowchart TB
-    Traveller[Traveller has a problem] --> Backend[Go: POST /ai/connectivity-diagnosis]
-    Backend --> Tools[Constrained tool set]
-    Tools --> T1[get_current_connectivity]
-    Tools --> T2[get_active_plan]
-    Tools --> T3[get_network_status]
-    Tools --> T4[get_recent_connectivity_events]
-    Tools --> T5[get_destination_network_information]
-    Tools --> Claude[Claude reasons over tool results]
-    Claude --> Structured[Structured JSON result]
-    Structured --> Validate[Schema + enum + confidence validation]
-    Validate -->|valid| User[Returned to traveller]
-    Validate -->|invalid or Claude unavailable| Deterministic[Deterministic diagnostic engine]
-    Deterministic --> User
+    Traveller[Traveller taps "Get AI recommendation"] --> Backend[Go: POST /api/v1/diagnostics/recommend]
+    Backend --> Gather[DiagnosticService.Diagnose — same gathering logic as Phase 8]
+    Gather --> Diagnosis[Deterministic Diagnosis]
+    Diagnosis --> Persist1[Persisted as a deterministic diagnostic_results row]
+    Diagnosis --> Prompt[buildRecoveryPrompt]
+    Prompt --> Claude[ClaudeClient.Recommend — forced tool_use, claude-opus-5]
+    Claude --> Validate[validateRecommendationPayload]
+    Validate -->|valid| AIResult[AIRecommendation, Source: ai]
+    Validate -->|invalid or Claude unreachable/unconfigured| Fallback[fallbackRecommendation wraps the deterministic Diagnosis, Source: fallback]
+    AIResult --> Persist2[Persisted as a second, ai-tagged row on the same session]
+    AIResult --> User[Returned to traveller — UI always shows Source]
+    Fallback --> User
 ```
 
 The Claude API key lives only in the Go backend's environment. The Flutter
-app calls `POST /api/v1/ai/connectivity-diagnosis` like any other endpoint;
+app calls `POST /api/v1/diagnostics/recommend` like any other endpoint;
 it never talks to Anthropic directly.
 
-## 10. Testing strategy (seed — full doc in Phase 13)
+## 10. Testing strategy
 
 - **Unit**: domain models, use cases, repositories, cache TTL/staleness,
   retry logic, diagnostic engine, sync logic, serializers, BLoC state
   transitions.
 - **Widget**: connected/offline/degraded/loading/error/stale-indicator
   rendering, diagnostic result rendering, Chaos Mode controls.
-- **Integration**: the five scenarios in §27 of the master brief, built
-  directly off the primary user journey (§3 of `PRODUCT_DISCOVERY.md`).
+- **Integration**: five real `integration_test` scenarios
+  (`apps/mobile/integration_test/`) built directly off the primary user
+  journey (§3 of `PRODUCT_DISCOVERY.md`), driving the actual app against
+  the actual running backend — no mocks. Full detail, design rationale,
+  and how to run them: `docs/INTEGRATION_TESTING.md` (Phase 13).
 - Backend: Go table-driven tests per layer (handler, service, repository)
   plus migration/seed verification.
-- AI tests run against **mocked** Claude responses only — no live API calls
-  in CI.
+- The AI recovery agent's tests run against a **fake** `AIClient` — no
+  live Claude API calls in CI or in the integration suite (see ADR-008).
 
 ## 11. CI/CD strategy (seed — full doc in Phase 14)
 
