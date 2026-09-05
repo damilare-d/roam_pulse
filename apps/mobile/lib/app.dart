@@ -1,3 +1,4 @@
+import 'package:ai_agent/ai_agent.dart';
 import 'package:connectivity/connectivity.dart';
 import 'package:design_system/design_system.dart';
 import 'package:diagnostics/diagnostics.dart';
@@ -20,6 +21,7 @@ class RoamPulseApp extends StatelessWidget {
     required this.authRepository,
     required this.connectivityRepository,
     required this.diagnosticsRepository,
+    required this.aiRecoveryRepository,
     required this.nativeWidgetService,
     this.chaosModeController,
     this.chaosCacheRepository,
@@ -32,6 +34,7 @@ class RoamPulseApp extends StatelessWidget {
   final AuthRepository authRepository;
   final ConnectivityRepository connectivityRepository;
   final DiagnosticsRepository diagnosticsRepository;
+  final AiRecoveryRepository aiRecoveryRepository;
   final NativeWidgetService nativeWidgetService;
 
   /// Non-null only in debug builds (see main.dart) — Chaos Mode's route and
@@ -55,6 +58,9 @@ class RoamPulseApp extends StatelessWidget {
         ),
         RepositoryProvider<DiagnosticsRepository>.value(
           value: diagnosticsRepository,
+        ),
+        RepositoryProvider<AiRecoveryRepository>.value(
+          value: aiRecoveryRepository,
         ),
         RepositoryProvider<NativeWidgetService>.value(
           value: nativeWidgetService,

@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 
+import 'package:ai_agent/ai_agent.dart';
 import 'package:connectivity/connectivity.dart';
 import 'package:diagnostics/diagnostics.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -31,6 +32,7 @@ Future<void> main() async {
     store,
   );
   final diagnosticsRepository = HttpDiagnosticsRepository(apiClient);
+  final aiRecoveryRepository = HttpAiRecoveryRepository(apiClient);
   final nativeWidgetService = MethodChannelNativeWidgetService();
 
   // Chaos Mode (Phase 9) only exists at all in debug builds — the
@@ -51,6 +53,7 @@ Future<void> main() async {
       authRepository: authRepository,
       connectivityRepository: connectivityRepository,
       diagnosticsRepository: diagnosticsRepository,
+      aiRecoveryRepository: aiRecoveryRepository,
       nativeWidgetService: nativeWidgetService,
       chaosModeController: chaosModeController,
       chaosCacheRepository: kDebugMode ? connectivityRepository : null,

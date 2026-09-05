@@ -1,3 +1,4 @@
+import 'package:ai_agent/ai_agent.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:design_system/design_system.dart';
 import 'package:diagnostics/diagnostics.dart';
@@ -14,10 +15,21 @@ class DiagnosticsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) =>
-          DiagnosticsBloc(context.read<DiagnosticsRepository>())
-            ..add(const DiagnosticsRequested()),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) =>
+              DiagnosticsBloc(context.read<DiagnosticsRepository>())
+                ..add(const DiagnosticsRequested()),
+        ),
+        // Not auto-triggered like DiagnosticsBloc above — asking Claude is
+        // a deliberate second step the traveller opts into from the
+        // deterministic result, not something that fires on page load.
+        BlocProvider(
+          create: (context) =>
+              AiRecoveryBloc(context.read<AiRecoveryRepository>()),
+        ),
+      ],
       child: const _DiagnosticsView(),
     );
   }
@@ -95,6 +107,8 @@ class _DiagnosticsView extends StatelessWidget {
                     child: const Text('Run again'),
                   ),
                 ),
+                const SizedBox(height: AppSpacing.md),
+                const _AiRecoverySection(),
               ],
             ),
           };
@@ -109,3 +123,81 @@ StatusTone _severityTone(String severity) => switch (severity) {
   'medium' => StatusTone.warning,
   _ => StatusTone.positive,
 };
+
+/// Claude is only ever called from the backend — this section just shows
+/// whatever `AiRecoveryBloc` got back from `POST
+/// /api/v1/diagnostics/recommend`, including honestly labelling a
+/// fallback answer as such rather than presenting it as a real AI
+/// recommendation (ADR-008).
+class _AiRecoverySection extends StatelessWidget {
+  const _AiRecoverySection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AiRecoveryBloc, AiRecoveryState>(
+      builder: (context, state) {
+        return switch (state) {
+          AiRecoveryInitial() => Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              onPressed: () => context.read<AiRecoveryBloc>().add(
+                const AiRecommendationRequested(),
+              ),
+              icon: const Icon(Icons.auto_awesome),
+              label: const Text('Get AI recommendation'),
+            ),
+          ),
+          AiRecoveryLoading() => const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+            child: LoadingView(message: 'Asking Claude…'),
+          ),
+          AiRecoveryFailed(:final failure) => ErrorView(
+            message: failure.message,
+            onRetry: () => context.read<AiRecoveryBloc>().add(
+              const AiRecommendationRequested(),
+            ),
+          ),
+          AiRecoveryLoaded(:final recommendation) => RoamPulseCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.auto_awesome, size: 18),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      recommendation.isFallback
+                          ? 'Fallback (AI unavailable)'
+                          : 'AI recommendation',
+                      style: AppTypography.label,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(recommendation.summary, style: AppTypography.body),
+                const SizedBox(height: AppSpacing.md),
+                for (final step in recommendation.steps)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('•  '),
+                        Expanded(child: Text(step, style: AppTypography.body)),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Confidence: ${(recommendation.confidence * 100).round()}%'
+                  '${recommendation.escalate ? ' · may need carrier support' : ''}',
+                  style: AppTypography.caption,
+                ),
+              ],
+            ),
+          ),
+        };
+      },
+    );
+  }
+}

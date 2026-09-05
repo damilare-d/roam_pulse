@@ -33,11 +33,11 @@ jobs:
 
       - name: Run tests (pure Dart packages)
         run: |
-          dart test packages/core packages/network packages/ai_agent packages/analytics
+          dart test packages/core packages/network packages/analytics
 
       - name: Run tests (Flutter packages)
         run: |
-          for pkg in design_system storage connectivity plans diagnostics; do
+          for pkg in design_system storage connectivity plans diagnostics ai_agent; do
             (cd packages/$pkg && flutter test)
           done
 
