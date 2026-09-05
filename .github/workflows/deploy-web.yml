@@ -1,0 +1,37 @@
+name: deploy-web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/**"
+      - "packages/**"
+      - ".github/workflows/deploy-web.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.35.2"
+          channel: stable
+
+      - name: Resolve workspace dependencies
+        run: flutter pub get
+
+      - name: Build web release
+        working-directory: apps/mobile
+        run: flutter build web --release --dart-define=BACKEND_URL=${{ vars.BACKEND_URL }}
+
+      - name: Deploy to Vercel
+        working-directory: apps/mobile
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npm install -g vercel
+          vercel deploy build/web --prod --yes --token="${{ secrets.VERCEL_TOKEN }}"

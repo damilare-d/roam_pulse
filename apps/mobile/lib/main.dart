@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'package:ai_agent/ai_agent.dart';
 import 'package:connectivity/connectivity.dart';
 import 'package:diagnostics/diagnostics.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:network/network.dart';
 import 'package:plans/plans.dart';
@@ -70,10 +70,25 @@ Future<void> main() async {
 /// via plain `localhost`. This whole scheme is a Phase 3 dev-only
 /// convenience; Phase 4+ moves backend configuration to a proper
 /// build-time/environment setup.
+///
+/// `BACKEND_URL` (a full scheme+host URL, not just a host) takes priority
+/// over all of the above — the public web demo build points this at the
+/// deployed backend, e.g.
+/// `--dart-define=BACKEND_URL=https://roampulse-api.onrender.com`. `dart:io`'s
+/// `Platform` throws on web, so `kIsWeb` must be checked before it's ever
+/// touched — not just for the demo build, but for any local `flutter run
+/// -d chrome` too.
 String _resolveBaseUrl() {
+  const urlOverride = String.fromEnvironment('BACKEND_URL');
+  if (urlOverride.isNotEmpty) {
+    return urlOverride;
+  }
   const hostOverride = String.fromEnvironment('BACKEND_HOST');
   if (hostOverride.isNotEmpty) {
     return 'http://$hostOverride:8080';
+  }
+  if (kIsWeb) {
+    return 'http://localhost:8080';
   }
   if (Platform.isAndroid) {
     return 'http://10.0.2.2:8080';

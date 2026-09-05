@@ -21,7 +21,7 @@ type Services struct {
 	AIRecovery   *service.AIRecoveryService
 }
 
-func NewRouter(services Services) *http.ServeMux {
+func NewRouter(services Services) http.Handler {
 	mux := http.NewServeMux()
 
 	RegisterHealthRoutes(mux)
@@ -57,5 +57,5 @@ func NewRouter(services Services) *http.ServeMux {
 	aiRecovery := NewAIRecoveryHandler(services.AIRecovery)
 	mux.HandleFunc("POST /api/v1/diagnostics/recommend", aiRecovery.Recommend)
 
-	return mux
+	return withCORS(mux)
 }
