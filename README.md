@@ -16,6 +16,14 @@ constrained AI agent, all under test-first development and CI.
 [![tools-ai-ci](https://github.com/damilare-d/roam_pulse/actions/workflows/tools-ai-ci.yml/badge.svg)](https://github.com/damilare-d/roam_pulse/actions/workflows/tools-ai-ci.yml)
 [![integration](https://github.com/damilare-d/roam_pulse/actions/workflows/integration.yml/badge.svg)](https://github.com/damilare-d/roam_pulse/actions/workflows/integration.yml)
 
+**Live demo: [roam-pulse-psi.vercel.app](https://roam-pulse-psi.vercel.app)**
+— Flutter web build on Vercel, talking to a real Go + PostgreSQL backend
+on Render, genuine Claude AI recommendations included. See
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for how it's wired up. The
+backend is on Render's free tier, so the first request after a period of
+inactivity can take 30–60s to cold-start — that's Render spinning the
+service back up, not a bug.
+
 See [`docs/PRODUCT_DISCOVERY.md`](docs/PRODUCT_DISCOVERY.md) for the product
 brief, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the technical
 design, and [`docs/HOLAFLY_ROLE_MAPPING.md`](docs/HOLAFLY_ROLE_MAPPING.md)
@@ -176,4 +184,5 @@ cd tools/ai && go run ./cmd/aiworkflow --reviewer "your name, what you checked"
 | `docs/INTEGRATION_TESTING.md` | The 5 end-to-end scenarios, how to run them, design notes |
 | `docs/CI_CD.md` | The four GitHub Actions workflows |
 | `docs/AI_DEVELOPMENT_WORKFLOW.md` | The proposal→validate→generate→format→analyze→test→coverage→review pipeline |
+| `docs/DEPLOYMENT.md` | How the live demo (Render + Vercel) is wired up |
 | `docs/decisions/ADR-*.md` | Ten architecture decision records |
