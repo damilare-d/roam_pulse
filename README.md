@@ -41,7 +41,8 @@ honestly unverified — no Mac available) home-screen widgets, a
 developer-only Chaos Mode failure-simulation console, a deterministic
 diagnostic engine with a Claude-backed recovery agent on top of it, an
 AI-assisted engineering workflow gate-runner, a 5-scenario integration test
-suite, and four green CI workflows. Full detail and status per requirement:
+suite, and five green CI/CD workflows — including a live deployment (see
+below). Full detail and status per requirement:
 `docs/HOLAFLY_ROLE_MAPPING.md`.
 
 **Known gaps, stated plainly**: `packages/analytics` (observability —
@@ -100,7 +101,7 @@ roampulse/
 ├── tools/ai/                      # AI-assisted development workflow (Phase 12)
 ├── docs/                          # Product, architecture, and decision docs
 │   └── decisions/                 # ADRs
-├── .github/workflows/             # flutter-ci, backend-ci, tools-ai-ci, integration
+├── .github/workflows/             # flutter-ci, backend-ci, tools-ai-ci, integration, deploy-web
 ├── melos.yaml
 └── pubspec.yaml                   # Dart pub workspace root
 ```
@@ -182,7 +183,7 @@ cd tools/ai && go run ./cmd/aiworkflow --reviewer "your name, what you checked"
 | `docs/ARCHITECTURE.md` | System design, package boundaries, data flow |
 | `docs/HOLAFLY_ROLE_MAPPING.md` | Every requirement → implementation → tests → status |
 | `docs/INTEGRATION_TESTING.md` | The 5 end-to-end scenarios, how to run them, design notes |
-| `docs/CI_CD.md` | The four GitHub Actions workflows |
+| `docs/CI_CD.md` | The five GitHub Actions workflows |
 | `docs/AI_DEVELOPMENT_WORKFLOW.md` | The proposal→validate→generate→format→analyze→test→coverage→review pipeline |
 | `docs/DEPLOYMENT.md` | How the live demo (Render + Vercel) is wired up |
 | `docs/decisions/ADR-*.md` | Ten architecture decision records |

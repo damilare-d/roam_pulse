@@ -1,6 +1,6 @@
 # CI/CD strategy
 
-Four independent GitHub Actions workflows, each scoped to the part of the
+Five independent GitHub Actions workflows, each scoped to the part of the
 repo it actually needs to check — a mobile-only change doesn't wait on a
 Postgres-backed integration run, and a docs-only change doesn't trigger
 any of them.
@@ -11,11 +11,14 @@ any of them.
 | `backend-ci.yml` | `ubuntu-latest` | `gofmt`, `go vet`, `go build`, `go test` for `backend/api` |
 | `tools-ai-ci.yml` | `ubuntu-latest` | Same four checks, for `tools/ai` — its own Go module (Phase 12) |
 | `integration.yml` | `ubuntu-latest` | The 5 real `integration_test` scenarios (Phase 13) against a real Postgres + backend |
+| `deploy-web.yml` | `ubuntu-latest` | Builds the Flutter web release and deploys it to Vercel — see `docs/DEPLOYMENT.md` |
 
 `flutter-ci.yml` and `backend-ci.yml` predate this document (Phase 3/4);
-`tools-ai-ci.yml` and `integration.yml` are this phase's additions —
-`docs/AI_DEVELOPMENT_WORKFLOW.md` and `docs/INTEGRATION_TESTING.md` cover
-those two features' own design; this document covers only the CI wiring.
+`tools-ai-ci.yml` and `integration.yml` are this phase's additions;
+`deploy-web.yml` came later still, alongside the live deployment.
+`docs/AI_DEVELOPMENT_WORKFLOW.md`, `docs/INTEGRATION_TESTING.md`, and
+`docs/DEPLOYMENT.md` cover those three features' own design; this
+document covers only the CI/CD wiring.
 
 ## `integration.yml`
 
@@ -41,8 +44,8 @@ The one workflow that's more than "run a formatter/analyzer/test binary":
    container GitHub only offers on Linux runners — provisioning Postgres
    on Windows would mean Chocolatey or a Windows-specific action instead,
    a second kind of database setup alongside the Linux-native one every
-   other workflow already uses. Linux desktop keeps all four workflows on
-   the same runner OS and the same Postgres mechanism; `apps/mobile/linux/`
+   other workflow already uses. Linux desktop keeps every workflow on the
+   same runner OS and the same Postgres mechanism; `apps/mobile/linux/`
    already existed as a complete, if previously unused, Flutter-generated
    scaffold, so no new platform target had to be created; only the CI
    environment for it is genuinely new and unverified until this workflow

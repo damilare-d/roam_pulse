@@ -291,11 +291,13 @@ it never talks to Anthropic directly.
 
 ## 11. CI/CD strategy
 
-Four independent per-surface workflows so a backend-only or mobile-only
-change doesn't wait on unrelated jobs. Full detail (why four separate
+Five independent per-surface workflows so a backend-only or mobile-only
+change doesn't wait on unrelated jobs. Full detail (why separate
 workflows, why `integration.yml` runs Linux desktop under `xvfb` rather
 than reusing the Windows target verified locally, `services:` vs.
 provisioning Postgres another way): `docs/CI_CD.md` (Phase 14).
+`deploy-web.yml` came later still, alongside the live deployment — see
+`docs/DEPLOYMENT.md`.
 
 ```mermaid
 flowchart LR
@@ -303,8 +305,10 @@ flowchart LR
     PR --> BackendCI[backend-ci.yml: gofmt, vet, tests, build]
     PR --> ToolsAiCI[tools-ai-ci.yml: gofmt, vet, tests, build]
     PR --> IntegrationCI[integration.yml: Postgres service + real backend + 5 integration_test scenarios on Linux desktop]
+    Push[Push to main, apps/mobile or packages] --> DeployWeb[deploy-web.yml: build Flutter web, deploy to Vercel]
     FlutterCI --> Merge
     BackendCI --> Merge
     ToolsAiCI --> Merge
     IntegrationCI --> Merge
+    DeployWeb --> Live[Live demo]
 ```
