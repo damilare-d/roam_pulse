@@ -32,6 +32,17 @@ func main() {
 	}
 	defer pool.Close()
 
+	// Reseeds deterministic demo data on every startup — postgres.Seed
+	// truncates before inserting (internal/postgres/seed.go), so this is
+	// safe to rerun and never accumulates stale state. Deliberately
+	// unconditional rather than gated behind a flag: local dev already
+	// expects the same fixed baseline every run, and a public deployment
+	// (Render free tier has no pre-deploy-command hook) needs seeding
+	// folded into the binary's own startup, not a separate step.
+	if err := postgres.Seed(ctx, pool); err != nil {
+		log.Fatalf("seed: %v", err)
+	}
+
 	travellers := postgres.NewTravellerRepo(pool)
 	plans := postgres.NewPlanRepo(pool)
 	destinations := postgres.NewDestinationRepo(pool)

@@ -111,12 +111,24 @@ normal, expected state, not a startup failure.
   unit-tested without any network access. `ClaudeClient.Recommend` itself
   is tested against an `httptest.Server`, covering a valid `tool_use`
   response, a non-200 status, and a missing tool_use block.
-- Verified without a live Claude API key (none provisioned yet): every
-  fallback path (`AIClient` error, malformed payload) is covered by
+- First verified without a live Claude API key: every fallback path
+  (`AIClient` error, malformed payload) is covered by
   `ai_recovery_service_test.go` with a fake `AIClient`, and the "no key
   configured" path is covered directly
   (`TestClaudeClient_NoAPIKeyReturnsNotConfiguredWithoutMakingARequest`).
-  A genuine end-to-end Claude call is expected to be verified live once a
-  key is provisioned — until then, RoamPulse behaves correctly and
-  honestly with the AI half entirely absent, which is itself the point of
-  this design.
+  RoamPulse behaved correctly and honestly with the AI half entirely
+  absent, which was itself the point of this design.
+- **A real key was provisioned and the genuine path verified live**: `POST
+  /api/v1/diagnostics/recommend` against the real Anthropic API returned a
+  valid, schema-conformant tool call on the first attempt — `"source":
+  "ai"`, a coherent traveler-facing summary and steps. The UI round-trip
+  surfaced one real bug this straight-to-fake-client testing couldn't:
+  `ApiClient`'s default 10s Dio timeout (sized for fast Postgres-backed
+  endpoints) was too short for a genuine Claude round-trip, and the
+  request timed out client-side even though the backend would have
+  answered a few seconds later. Fixed with a per-call `receiveTimeout`
+  override on `ApiClient.postJson` (`packages/network`), set to 45s for
+  this one endpoint — comfortably longer than `ClaudeClient`'s own 20s
+  server-side timeout, so the backend gets a real chance to answer or
+  fall back before the client gives up first. Re-verified live after the
+  fix: genuine "AI recommendation" card renders correctly.

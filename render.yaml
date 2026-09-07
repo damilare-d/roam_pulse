@@ -11,12 +11,12 @@ services:
     rootDir: backend/api
     buildCommand: go build -o bin/api ./cmd/api
     startCommand: ./bin/api
-    # Reseeds deterministic demo data on every deploy — desirable for a
-    # public demo (every visitor sees the same pristine Tokyo/SoftBank
-    # scenario, not whatever a previous visitor's diagnostic runs left
-    # behind) since postgres.Seed truncates before inserting (see
-    # backend/api/internal/postgres/seed.go) and is safe to rerun.
-    preDeployCommand: go run ./cmd/seed
+    # No preDeployCommand — that's a paid-tier-only Render feature.
+    # cmd/api itself reseeds deterministic demo data on every startup
+    # (see cmd/api/main.go), which is what actually makes this work on
+    # the free tier and is arguably better anyway: every visitor gets the
+    # same pristine Tokyo/SoftBank scenario, not whatever a previous
+    # visitor's diagnostic runs left behind.
     envVars:
       - key: DATABASE_URL
         fromDatabase:

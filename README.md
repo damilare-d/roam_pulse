@@ -42,11 +42,15 @@ original Phase 1 scaffold, never implemented; there's no dedicated
 `SyncBloc` or sync endpoint — the `sync_metadata` table exists in the
 schema but nothing ever writes to it, since the network-first-with-cache
 pattern that *was* built (ADR-006) covers the same need without it; the
-iOS widget is written but unverified; the AI recovery agent's
-genuine-Claude path is unit-tested against a fake client but not yet
-demoed live (no `ANTHROPIC_API_KEY` provisioned). None of these are
-hidden in the role-mapping table — they're marked 🔲/🟡 there, not quietly
-left off this list.
+iOS widget is written but unverified. None of these are hidden in the
+role-mapping table — they're marked 🔲/🟡 there, not quietly left off this
+list.
+
+The AI recovery agent's genuine-Claude path is now live-verified — a real
+`ANTHROPIC_API_KEY` returned a valid, schema-conformant recommendation on
+the first attempt, which also surfaced and fixed a real bug: the Dio
+client's default request timeout was sized for fast Postgres reads and
+too short for an actual Claude round-trip (see ADR-008's Consequences).
 
 ## Feature tour
 

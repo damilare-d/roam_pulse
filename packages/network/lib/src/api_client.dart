@@ -61,14 +61,25 @@ class ApiClient {
   }
 
   /// POSTs [data] to [path] and decodes the `data` object of the response
-  /// envelope with [fromJson].
+  /// envelope with [fromJson]. [receiveTimeout] overrides the client's
+  /// configured default for this one call — most endpoints are fast
+  /// Postgres reads well within the default, but a genuine Claude
+  /// round-trip (the AI recovery endpoint) routinely takes longer than
+  /// the 10s sized for everything else.
   Future<Result<T>> postJson<T>(
     String path, {
     required T Function(Map<String, dynamic> json) fromJson,
     Object? data,
+    Duration? receiveTimeout,
   }) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(path, data: data);
+      final response = await _dio.post<Map<String, dynamic>>(
+        path,
+        data: data,
+        options: receiveTimeout == null
+            ? null
+            : Options(receiveTimeout: receiveTimeout),
+      );
       final responseData = response.data?['data'];
       if (responseData is! Map<String, dynamic>) {
         return const Err(ParsingFailure());
