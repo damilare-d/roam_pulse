@@ -157,17 +157,10 @@ func runTestsAndCoverageGates(root string) (tests, coverage pipeline.GateResult)
 	}
 
 	backendDir := filepath.Join(root, "backend", "api")
-	if out, err := runCommand(backendDir, "go", "test", "-cover", "./..."); err != nil {
-		failures = append(failures, "backend go test: "+firstLine(out))
-	} else {
-		coverageNotes = append(coverageNotes, coveragePercentages(out)...)
-	}
+	failures, coverageNotes = appendGoModuleResults(backendDir, "backend", failures, coverageNotes)
 
-	if out, err := runCommand(filepath.Join(root, "tools", "ai"), "go", "test", "-cover", "./..."); err != nil {
-		failures = append(failures, "tools/ai go test: "+firstLine(out))
-	} else {
-		coverageNotes = append(coverageNotes, coveragePercentages(out)...)
-	}
+	toolsAIDir := filepath.Join(root, "tools", "ai")
+	failures, coverageNotes = appendGoModuleResults(toolsAIDir, "tools/ai", failures, coverageNotes)
 
 	if len(failures) > 0 {
 		detail := strings.Join(failures, " | ")
@@ -182,6 +175,27 @@ func runTestsAndCoverageGates(root string) (tests, coverage pipeline.GateResult)
 	// this pipeline exists to avoid. A reviewer reads the actual numbers.
 	coverage = pipeline.GateResult{Name: "coverage", Status: pipeline.StatusPassed, Detail: strings.Join(coverageNotes, "; ")}
 	return tests, coverage
+}
+
+// appendGoModuleResults tests one Go module in two steps: first plain
+// `go test ./...`, which is the real, authoritative pass/fail signal;
+// then, only if that passed, a best-effort `go test -cover ./...` purely
+// to harvest coverage numbers. The second step is allowed to fail
+// without failing the tests gate — some Go 1.25 toolchains (notably
+// GOTOOLCHAIN=auto's downloaded copy) are missing the `covdata` tool
+// needed to instrument packages with zero test files under `-cover`,
+// which is a toolchain gap, not a test failure. Genuine test failures
+// are already caught by the first, uninstrumented run.
+func appendGoModuleResults(dir, label string, failures, coverageNotes []string) ([]string, []string) {
+	if out, err := runCommand(dir, "go", "test", "./..."); err != nil {
+		return append(failures, label+" go test: "+firstLine(out)), coverageNotes
+	}
+	if out, err := runCommand(dir, "go", "test", "-cover", "./..."); err != nil {
+		coverageNotes = append(coverageNotes, label+": coverage data unavailable ("+firstLine(out)+")")
+	} else {
+		coverageNotes = append(coverageNotes, coveragePercentages(out)...)
+	}
+	return failures, coverageNotes
 }
 
 // coveragePercentages pulls "coverage: NN.N% of statements" lines out of
